@@ -176,8 +176,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const rawData = await response.json();
-
-                // *** FIX: Use a function to transform the unique JSON format into a standard one ***
+                
                 const standardData = transformRawData(rawData);
                 originalProcessedData = processTableData(standardData);
                 
@@ -196,21 +195,14 @@
             }
         }
 
-        /**
-         * *** NEW FUNCTION ***
-         * Transforms the unique semicolon-delimited JSON format into a standard array of objects.
-         * @param {Array<Object>} rawData The raw data from the JSON file.
-         * @returns {Array<Object>} A standard array of data objects.
-         */
         function transformRawData(rawData) {
             if (!Array.isArray(rawData) || rawData.length === 0) {
                 return [];
             }
 
-            // Check if the data is already in the correct format or needs transformation
             const firstItemKeys = Object.keys(rawData[0]);
             if (firstItemKeys.length > 1 || !firstItemKeys[0].includes(';')) {
-                return rawData; // Data is likely already standard
+                return rawData;
             }
 
             return rawData.map(entry => {
@@ -481,4 +473,4 @@
         }
     </script>
 </body>
-</html>
+</ht

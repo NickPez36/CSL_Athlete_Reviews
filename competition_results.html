@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom - Competition Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        /* Set the custom font for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Define the color palette as CSS Variables for easy use */
+        :root {
+            --brand-dark-blue: #0A2B4C;
+            --brand-teal: #0097A7;
+            --brand-light-blue: #4DD0E1;
+            --neutral-white: #FFFFFF;
+            --neutral-light-gray: #F3F4F6;
+            --neutral-text: #1F2937;
+            --feedback-error: #DC2626;
+            --feedback-success: #16A34A;
+        }
+
+        /* Apply custom colors using the variables */
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .text-brand-dark-blue { color: var(--brand-dark-blue); }
+        .text-brand-teal { color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+        .ring-brand-teal { --tw-ring-color: var(--brand-teal); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+        .text-feedback-error { color: var(--feedback-error); }
+        .bg-feedback-error { background-color: var(--feedback-error); }
+        .bg-feedback-success { background-color: var(--feedback-success); }
+
+        /* Custom styles for tooltips and active toggles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .toggle-btn-active {
+            background-color: var(--brand-teal);
+            color: white;
+            border-color: var(--brand-teal);
+        }
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <!-- Message Box for notifications -->
+    <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col">
+
+        <!-- Header Navigation -->
+        <nav class="bg-brand-dark-blue shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0">
+                        <img 
+                            src="assets/Paddle Aus Logo.png" 
+                            alt="Paddle Australia Logo" 
+                            class="h-12"
+                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                    </div>
+                    <div class="hidden md:block">
+                        <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
+                    </div>
+                    <div>
+                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                
+                <!-- Page Header -->
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-neutral-text">Competition Results & Career Summary</h1>
+                    <p class="mt-2 text-lg text-gray-600">Analyze athlete performance across competitions.</p>
+                </header>
+
+                <!-- Loading State -->
+                <div id="loading-state" class="text-center py-10">
+                    <p class="text-lg text-gray-500">Loading data, please wait...</p>
+                </div>
+
+                <!-- Main dashboard (initially hidden) -->
+                <div id="dashboard-content" class="hidden">
+                    <!-- Filter Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 bg-white rounded-lg shadow-md">
+                        <div>
+                            <label for="class-select" class="block text-sm font-medium text-gray-700 mb-1">Select Class</label>
+                            <select id="class-select" class="w-full p-2 border border-gray-300 rounded-md focus:ring-brand-teal focus:border-brand-teal"></select>
+                        </div>
+                        <div>
+                            <label for="athlete-search" class="block text-sm font-medium text-gray-700 mb-1">Search Athlete</label>
+                            <input type="text" id="athlete-search" placeholder="Search by name..." class="w-full p-2 border border-gray-300 rounded-md focus:ring-brand-teal focus:border-brand-teal">
+                        </div>
+                        <div>
+                            <label for="athlete-select" class="block text-sm font-medium text-gray-700 mb-1">Select Athlete</label>
+                            <select id="athlete-select" class="w-full p-2 border border-gray-300 rounded-md focus:ring-brand-teal focus:border-brand-teal" disabled></select>
+                        </div>
+                    </div>
+
+                    <!-- Results Display -->
+                    <div id="results-container" class="hidden bg-white rounded-lg shadow-md p-6">
+                        <h2 id="athlete-name-header" class="text-2xl font-bold mb-4 text-center text-brand-dark-blue"></h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Heat Rank</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Semi-Final Rank</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Final Rank</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-body" class="bg-white divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Chart Container -->
+                        <div id="chart-container" class="mt-12 hidden">
+                            <h3 class="text-xl font-bold mb-4 text-center text-brand-dark-blue">Performance Over Time</h3>
+                            <div class="flex flex-col md:flex-row justify-center items-center gap-4 mb-4">
+                                <div id="metric-toggle" class="flex justify-center rounded-md shadow-sm" role="group">
+                                    <button type="button" data-metric="Raw % Behind" class="toggle-btn-active px-4 py-2 text-sm font-medium border border-gray-300 rounded-l-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-brand-teal">Raw %</button>
+                                    <button type="button" data-metric="Total % Behind" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border-gray-300 border-t border-b border-r rounded-r-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-brand-teal">Total %</button>
+                                </div>
+                                <div id="phase-filter" class="flex justify-center rounded-md shadow-sm" role="group">
+                                    <button type="button" data-phase="All" class="toggle-btn-active px-4 py-2 text-sm font-medium border border-gray-300 rounded-l-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-brand-teal">All</button>
+                                    <button type="button" data-phase="Heat" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border-gray-300 border-t border-b hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-brand-teal">Heats</button>
+                                    <button type="button" data-phase="Semi-Final" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border-gray-300 border-t border-b hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-brand-teal">Semi-Finals</button>
+                                    <button type="button" data-phase="Final" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border-gray-300 rounded-r-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-brand-teal">Finals</button>
+                                </div>
+                                <button id="reset-zoom-btn" type="button" class="px-4 py-2 text-sm font-medium text-white bg-brand-dark-blue border border-transparent rounded-lg hover:bg-brand-teal shadow-sm">Reset Zoom</button>
+                            </div>
+                            <div class="relative h-96 md:h-[500px]">
+                                <canvas id="performance-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                 &copy;2025 Paddle Australia. All rights reserved.
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- State Variables ---
+        let allData = [];
+        let athletesByClass = {};
+        let performanceChart = null;
+        let lastAthleteData = []; 
+        let currentMetric = 'Raw % Behind';
+        let currentPhaseFilter = 'All';
+        let currentClass = '';
+        let performanceBands = {};
+
+        // --- DOM Elements ---
+        const dashboardControls = document.getElementById('dashboard-controls');
+        const classSelect = document.getElementById('class-select');
+        const athleteSearch = document.getElementById('athlete-search');
+        const athleteSelect = document.getElementById('athlete-select');
+        const resultsContainer = document.getElementById('results-container');
+        const athleteNameHeader = document.getElementById('athlete-name-header');
+        const resultsBody = document.getElementById('results-body');
+        const metricToggle = document.getElementById('metric-toggle');
+        const phaseFilter = document.getElementById('phase-filter');
+        const resetZoomBtn = document.getElementById('reset-zoom-btn');
+
+        // --- Data Fetching ---
+        async function loadInitialData() {
+            const resultsFilePath = 'data/competition_results/competition_results.json';
+            const bandsFilePath = 'data/competition_results/performance_bands.json';
+            
+            try {
+                const [resultsResponse, bandsResponse] = await Promise.all([
+                    fetch(resultsFilePath),
+                    fetch(bandsFilePath)
+                ]);
+
+                if (!resultsResponse.ok) throw new Error(`Failed to load competition results: ${resultsResponse.statusText}`);
+                if (!bandsResponse.ok) throw new Error(`Failed to load performance bands: ${bandsResponse.statusText}`);
+
+                allData = await resultsResponse.json();
+                const bandArray = await bandsResponse.json();
+
+                // Process performance bands data
+                performanceBands = {};
+                bandArray.forEach(item => {
+                    const { Class, BandType, Metric, Lower, Upper } = item;
+                    if (!performanceBands[Class]) performanceBands[Class] = {};
+                    if (!performanceBands[Class][BandType]) performanceBands[Class][BandType] = {};
+                    const lowerValue = parseFloat(Lower.replace('%', '')) - 100;
+                    const upperValue = parseFloat(Upper.replace('%', '')) - 100;
+                    performanceBands[Class][BandType][Metric] = { lower: lowerValue, upper: upperValue };
+                });
+
+                // Hide loading and show dashboard
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                
+                showMessage('Data loaded successfully!', false);
+                processData();
+
+            } catch (error) {
+                console.error("Data loading error:", error);
+                showMessage(error.message, true);
+                document.getElementById('loading-state').innerHTML = `<p class="text-lg text-feedback-error">Error loading data. Please check the console and file paths.</p>`;
+            }
+        }
+
+        // --- Data Processing & UI Population ---
+        function processData() {
+            athletesByClass = {};
+            const classes = new Set();
+            const filteredData = allData.filter(d => parseInt(d.Year, 10) >= 2012 && parseInt(d.Year, 10) <= 2024);
+            filteredData.forEach(d => {
+                if (d.Class && d["Athlete Name"]) {
+                    classes.add(d.Class);
+                    if (!athletesByClass[d.Class]) athletesByClass[d.Class] = new Map();
+                    const normalizedName = d["Athlete Name"].toLowerCase();
+                    if (!athletesByClass[d.Class].has(normalizedName)) athletesByClass[d.Class].set(normalizedName, d["Athlete Name"]);
+                }
+            });
+            populateClassSelect(Array.from(classes).sort());
+        }
+        function populateClassSelect(classes) {
+            classSelect.innerHTML = '<option value="">-- Select a Class --</option>';
+            classes.forEach(c => { const option = document.createElement('option'); option.value = c; option.textContent = c; classSelect.appendChild(option); });
+        }
+        function populateAthleteSelect(className, searchTerm = '') {
+            const athletes = Array.from((athletesByClass[className] || new Map()).values()).sort();
+            athleteSelect.innerHTML = '<option value="">-- Select an Athlete --</option>';
+            const filteredAthletes = athletes.filter(athlete => athlete.toLowerCase().includes(searchTerm.toLowerCase()));
+            filteredAthletes.forEach(athlete => { const option = document.createElement('option'); option.value = athlete; option.textContent = athlete; athleteSelect.appendChild(option); });
+            athleteSelect.disabled = filteredAthletes.length === 0;
+        }
+
+        // --- Analysis and Display ---
+        function displayAthleteResults(athleteName, className) {
+            athleteNameHeader.textContent = `Results for ${athleteName} (${className})`;
+            resultsBody.innerHTML = ''; 
+            const lowerCaseAthleteName = athleteName.toLowerCase();
+            lastAthleteData = allData.filter(d => d["Athlete Name"] && d["Athlete Name"].toLowerCase() === lowerCaseAthleteName && d.Class === className);
+            
+            const resultsByYear = {};
+            lastAthleteData.forEach(d => {
+                const year = parseInt(d.Year, 10);
+                if (!resultsByYear[year]) resultsByYear[year] = { 'Heat 1': [], 'Semi-Final': [], 'Final': [] };
+                const phase = d.Phase ? d.Phase.toLowerCase() : '';
+                let targetPhase = null;
+                if (phase.includes('heat')) targetPhase = 'Heat 1';
+                else if (phase.includes('semi-final')) targetPhase = 'Semi-Final';
+                else if (phase.includes('final')) targetPhase = 'Final';
+                if (targetPhase && d.Rank) resultsByYear[year][targetPhase].push(parseInt(d.Rank, 10));
+            });
+            
+            const sortedYears = Object.keys(resultsByYear).sort((a, b) => b - a);
+            if (sortedYears.length === 0) {
+                resultsBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">No results found for this athlete.</td></tr>`;
+                document.getElementById('chart-container').classList.add('hidden');
+            } else {
+                sortedYears.forEach(year => {
+                    const yearData = resultsByYear[year];
+                    const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 'N/A';
+                    const h1c = yearData['Heat 1'].length, sfc = yearData['Semi-Final'].length, fc = yearData['Final'].length;
+                    const pSemi = h1c > 0 ? `${(sfc / h1c * 100).toFixed(0)}% (${sfc}/${h1c})` : 'N/A';
+                    const pFinal = sfc > 0 ? `${(fc / sfc * 100).toFixed(0)}% (${fc}/${sfc})` : 'N/A';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="px-6 py-4">${year}</td><td class="px-6 py-4">${avg(yearData['Heat 1'])}</td><td class="px-6 py-4"><div class="tooltip">${avg(yearData['Semi-Final'])}<span class="tooltiptext">Progression: ${pSemi}</span></div></td><td class="px-6 py-4"><div class="tooltip">${avg(yearData['Final'])}<span class="tooltiptext">Progression: ${pFinal}</span></div></td>`;
+                    resultsBody.appendChild(row);
+                });
+            }
+            
+            renderPerformanceChart();
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // --- Chart Rendering ---
+        function getCompetitionSortValue(name) {
+            // This function assigns a numeric value to competitions for sorting.
+            if (!name) return 0; // Handle cases where competition name is missing
+            const comp = name.toLowerCase();
+            if (comp.includes('olympic games')) return 100;
+            if (comp.includes('world championships')) return 99;
+            if (comp.includes('world cup')) {
+                // If it's a world cup final, give it a high value within the WC range
+                if (comp.includes('final')) return 90;
+                const match = comp.match(/(\d+)/);
+                if (match && match[0]) {
+                    return parseInt(match[0], 10);
+                }
+                return 50; // Default for other world cups
+            }
+            return 98; // For other/unknown competitions
+        }
+
+        function getPhaseSortValue(name) {
+            if (!name) return 4;
+            const phase = name.toLowerCase();
+            if (phase.includes('heat')) return 1;
+            if (phase.includes('semi-final')) return 2;
+            if (phase.includes('final')) return 3;
+            return 4;
+        }
+        
+        const performanceBandPlugin = {
+            id: 'performanceBand',
+            beforeDatasetsDraw(chart, args, options) {
+                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+                const band = options.band;
+                if (!band) return;
+                ctx.save();
+                const yMin = y.getPixelForValue(band.lower);
+                const yMax = y.getPixelForValue(band.upper);
+                ctx.fillStyle = 'rgba(252, 211, 77, 0.4)';
+                ctx.fillRect(left, yMax, right - left, yMin - yMax);
+                ctx.restore();
+            }
+        };
+
+        function renderPerformanceChart() {
+            const ctx = document.getElementById('performance-chart').getContext('2d');
+            if (performanceChart) performanceChart.destroy();
+            
+            const phaseFilteredData = currentPhaseFilter === 'All'
+                ? lastAthleteData
+                : lastAthleteData.filter(d => {
+                    if (!d.Phase) return false;
+                    const phaseLower = d.Phase.toLowerCase();
+                    const filterLower = currentPhaseFilter.toLowerCase();
+                    if (filterLower === 'final' || filterLower === 'semi-final') return phaseLower === filterLower;
+                    if (filterLower === 'heat') return phaseLower.includes('heat');
+                    return false;
+                });
+
+            const sortedData = phaseFilteredData
+                .filter(d => d[currentMetric])
+                .sort((a, b) => {
+                    const yearComp = parseInt(a.Year, 10) - parseInt(b.Year, 10);
+                    if (yearComp !== 0) return yearComp;
+                    const compComp = getCompetitionSortValue(a.Competition) - getCompetitionSortValue(b.Competition);
+                    if (compComp !== 0) return compComp;
+                    return getPhaseSortValue(a.Phase) - getPhaseSortValue(b.Phase);
+                });
+
+            if (sortedData.length === 0) {
+                document.getElementById('chart-container').classList.add('hidden');
+                return;
+            }
+
+            const labels = sortedData.map(d => `${d.Year} ${d.Location} ${d.Competition} - ${d.Phase}`);
+            const dataPoints = sortedData.map(d => parseFloat(d[currentMetric].replace('%', '')) - 100);
+            
+            const bandType = (currentPhaseFilter === 'Final') ? 'Medal' : 'Progression';
+            const metricKey = currentMetric === 'Raw % Behind' ? 'raw' : 'total';
+            const bandData = performanceBands[currentClass] && performanceBands[currentClass][bandType] 
+                ? performanceBands[currentClass][bandType][metricKey] 
+                : null;
+
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [{ label: currentMetric, data: dataPoints, borderColor: 'var(--brand-teal)', backgroundColor: 'rgba(0, 151, 167, 0.1)', fill: false, tension: 0.1, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: 'var(--brand-teal)' }] },
+                plugins: [performanceBandPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { callback: function(val) { const l = this.getLabelForValue(val).split(' '); return `${l[1]} ${l[2]} - ${l[l.length - 1]}`; } } },
+                        y: { 
+                            title: { display: true, text: currentMetric }, 
+                            ticks: { callback: val => val.toFixed(1) + '%' },
+                            max: 40,
+                            min: currentMetric === 'Raw % Behind' ? -5 : 0
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { title: items => items[0].label, label: ctx => `${currentMetric}: ${ctx.parsed.y.toFixed(2)}%` } },
+                        performanceBand: { band: bandData },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            zoom: {
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(0, 151, 167, 0.3)'
+                                },
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x',
+                            }
+                        }
+                    }
+                }
+            });
+            document.getElementById('chart-container').classList.remove('hidden');
+        }
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInitialData();
+            classSelect.addEventListener('change', () => {
+                athleteSearch.value = '';
+                resultsContainer.classList.add('hidden');
+                currentClass = classSelect.value;
+                populateAthleteSelect(currentClass);
+            });
+            athleteSearch.addEventListener('input', () => {
+                resultsContainer.classList.add('hidden');
+                populateAthleteSelect(currentClass, athleteSearch.value);
+            });
+            athleteSelect.addEventListener('change', () => {
+                if (athleteSelect.value && currentClass) displayAthleteResults(athleteSelect.value, currentClass);
+                else resultsContainer.classList.add('hidden');
+            });
+            metricToggle.addEventListener('click', (e) => handleToggle(e, metricToggle));
+            phaseFilter.addEventListener('click', (e) => handleToggle(e, phaseFilter));
+            resetZoomBtn.addEventListener('click', () => performanceChart?.resetZoom());
+        });
+
+        function handleToggle(e, groupElement) {
+            const button = e.target.closest('button');
+            if (!button) return;
+            const dataKey = Object.keys(button.dataset)[0];
+            const value = button.dataset[dataKey];
+            if (!value) return;
+            if (dataKey === 'metric') currentMetric = value;
+            if (dataKey === 'phase') currentPhaseFilter = value;
+            groupElement.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('toggle-btn-active');
+                btn.classList.add('bg-white', 'text-gray-900');
+            });
+            button.classList.add('toggle-btn-active');
+            button.classList.remove('bg-white', 'text-gray-900');
+            renderPerformanceChart();
+        }
+
+        function showMessage(message, isError = true) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
+            box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
+            box.classList.remove('hidden', 'opacity-0');
+            setTimeout(() => {
+                box.classList.add('opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

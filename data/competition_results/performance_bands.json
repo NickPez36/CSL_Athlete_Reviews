@@ -1,0 +1,114 @@
+[
+  {
+    "Class": "K1M",
+    "BandType": "Progression",
+    "Metric": "raw",
+    "Lower": "102.49%",
+    "Upper": "104.34%"
+  },
+  {
+    "Class": "K1M",
+    "BandType": "Progression",
+    "Metric": "total",
+    "Lower": "103.40%",
+    "Upper": "105.22%"
+  },
+  {
+    "Class": "K1M",
+    "BandType": "Medal",
+    "Metric": "raw",
+    "Lower": "101.03%",
+    "Upper": "102.88%"
+  },
+  {
+    "Class": "K1M",
+    "BandType": "Medal",
+    "Metric": "total",
+    "Lower": "101.14%",
+    "Upper": "102.98%"
+  },
+  {
+    "Class": "C1W",
+    "BandType": "Progression",
+    "Metric": "raw",
+    "Lower": "104.72%",
+    "Upper": "109.70%"
+  },
+  {
+    "Class": "C1W",
+    "BandType": "Progression",
+    "Metric": "total",
+    "Lower": "106.83%",
+    "Upper": "110.43%"
+  },
+  {
+    "Class": "C1W",
+    "BandType": "Medal",
+    "Metric": "raw",
+    "Lower": "102.93%",
+    "Upper": "105.91%"
+  },
+  {
+    "Class": "C1W",
+    "BandType": "Medal",
+    "Metric": "total",
+    "Lower": "103.22%",
+    "Upper": "107.03%"
+  },
+  {
+    "Class": "C1M",
+    "BandType": "Progression",
+    "Metric": "raw",
+    "Lower": "103.10%",
+    "Upper": "105.42%"
+  },
+  {
+    "Class": "C1M",
+    "BandType": "Progression",
+    "Metric": "total",
+    "Lower": "104.07%",
+    "Upper": "105.91%"
+  },
+  {
+    "Class": "C1M",
+    "BandType": "Medal",
+    "Metric": "raw",
+    "Lower": "100.30%",
+    "Upper": "102.11%"
+  },
+  {
+    "Class": "C1M",
+    "BandType": "Medal",
+    "Metric": "total",
+    "Lower": "101.30%",
+    "Upper": "102.66%"
+  },
+  {
+    "Class": "K1W",
+    "BandType": "Progression",
+    "Metric": "raw",
+    "Lower": "104.29%",
+    "Upper": "107.13%"
+  },
+  {
+    "Class": "K1W",
+    "BandType": "Progression",
+    "Metric": "total",
+    "Lower": "105.31%",
+    "Upper": "107.65%"
+  },
+  {
+    "Class": "K1W",
+    "BandType": "Medal",
+    "Metric": "raw",
+    "Lower": "101.07%",
+    "Upper": "104.35%"
+  },
+  {
+    "Class": "K1W",
+    "BandType": "Medal",
+    "Metric": "total",
+    "Lower": "101.74%",
+    "Upper": "104.73%"
+  }
+]

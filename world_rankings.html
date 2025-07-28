@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom Analytics - World Rankings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Set the custom font for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Define the color palette as CSS Variables for easy use */
+        :root {
+            --brand-dark-blue: #0A2B4C;
+            --brand-teal: #0097A7;
+            --brand-light-blue: #4DD0E1;
+            --neutral-white: #FFFFFF;
+            --neutral-light-gray: #F3F4F6;
+            --neutral-text: #1F2937;
+            --feedback-error: #DC2626;
+            --feedback-success: #16A34A;
+        }
+
+        /* Apply custom colors using the variables */
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .text-brand-dark-blue { color: var(--brand-dark-blue); }
+        .text-brand-teal { color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+        .ring-brand-teal { --tw-ring-color: var(--brand-teal); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+        .text-feedback-error { color: var(--feedback-error); }
+        .bg-feedback-error { background-color: var(--feedback-error); }
+        .bg-feedback-success { background-color: var(--feedback-success); }
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <!-- Message Box for notifications -->
+    <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col">
+
+        <!-- Header Navigation -->
+        <nav class="bg-brand-dark-blue shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0">
+                        <img 
+                            src="assets/Paddle Aus Logo.png" 
+                            alt="Paddle Australia Logo" 
+                            class="h-12"
+                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                    </div>
+                    <div class="hidden md:block">
+                        <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
+                    </div>
+                    <div>
+                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <main id="main-content" class="flex-grow">
+            <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                
+                <!-- Page Header -->
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-neutral-text">World Ranking Visualizer</h1>
+                    <p class="mt-2 text-lg text-gray-600">With Olympic Medalist Progression Overlay</p>
+                </header>
+                
+                <!-- Loading State -->
+                <div id="loading-state" class="text-center py-10">
+                    <p class="text-lg text-gray-500">Loading data, please wait...</p>
+                </div>
+
+                <!-- Main dashboard (initially hidden) -->
+                <div id="dashboard-content" class="hidden">
+                    <!-- Filter Controls -->
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                            <div>
+                                <label for="class-select" class="block text-sm font-medium text-gray-700 mb-2">Select Class:</label>
+                                <select id="class-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
+                            </div>
+                            <div>
+                                <label for="athlete-search" class="block text-sm font-medium text-gray-700 mb-2">Select or Search Athlete:</label>
+                                <input type="text" id="athlete-search" placeholder="Search for an athlete..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal mb-2">
+                                <select id="athlete-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
+                            </div>
+                        </div>
+                        <div id="medalist-toggle-container" class="mt-4 flex items-center">
+                            <input id="medalist-toggle" type="checkbox" class="h-4 w-4 text-brand-teal focus:ring-brand-teal border-gray-300 rounded">
+                            <label for="medalist-toggle" class="ml-2 block text-sm text-gray-900">Show Olympic Medalist Trajectory</label>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-end mb-4">
+                            <button id="reset-zoom-btn" class="px-4 py-2 bg-brand-dark-blue text-white rounded-md shadow-sm hover:bg-brand-teal focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal">Reset Zoom</button>
+                        </div>
+                        <canvas id="ranking-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                 &copy;2025 Paddle Australia. All rights reserved.
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        let rankingData = null;
+        let medalistData = null;
+        let myChart;
+
+        // --- DATA FETCHING AND STATE MANAGEMENT ---
+        async function loadInitialData() {
+            const rankingFilePath = 'data/world_ranking/Canoe Slalom_World Ranking_JSON Output.json';
+            const medalistFilePath = 'data/world_ranking/Canoe Slalom_World Ranking_Medalists_JSON Output.json';
+            
+            try {
+                const [rankingResponse, medalistResponse] = await Promise.all([
+                    fetch(rankingFilePath),
+                    fetch(medalistFilePath)
+                ]);
+
+                if (!rankingResponse.ok) throw new Error(`Failed to load ranking data: ${rankingResponse.statusText}`);
+                if (!medalistResponse.ok) throw new Error(`Failed to load medalist data: ${medalistResponse.statusText}`);
+
+                rankingData = await rankingResponse.json();
+                medalistData = await medalistResponse.json();
+                
+                // Hide loading and show dashboard
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                
+                showMessage('Data loaded successfully!', false);
+                populateClassFilter();
+
+            } catch (error) {
+                console.error("Data loading error:", error);
+                showMessage(error.message, true);
+                document.getElementById('loading-state').innerHTML = `<p class="text-lg text-feedback-error">Error loading data. Please check the console and file paths.</p>`;
+            }
+        }
+
+        // --- FILTER POPULATION ---
+        function populateClassFilter() {
+            const classSelect = document.getElementById('class-select');
+            const classes = [...new Set(rankingData.map(item => item.Class))].sort();
+            classSelect.innerHTML = '<option value="">-- Select a Class --</option>';
+            classes.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.textContent = c;
+                classSelect.appendChild(option);
+            });
+        }
+
+        function populateAthleteFilter(selectedClass, searchTerm = '') {
+            const athleteSelect = document.getElementById('athlete-select');
+            if (!selectedClass) {
+                athleteSelect.innerHTML = '<option>Select a class first</option>';
+                if (myChart) myChart.destroy();
+                return;
+            }
+            let athletes = [...new Set(rankingData.filter(item => item.Class === selectedClass).map(item => item.Athlete))];
+            if (searchTerm) {
+                athletes = athletes.filter(athlete => athlete.toLowerCase().includes(searchTerm.toLowerCase()));
+            }
+            athletes.sort();
+            
+            athleteSelect.innerHTML = '';
+            if (athletes.length === 0) {
+                athleteSelect.innerHTML = '<option>No athletes found</option>';
+                if (myChart) myChart.destroy();
+                return;
+            }
+            athletes.forEach(athlete => {
+                const option = document.createElement('option');
+                option.value = athlete;
+                option.textContent = athlete;
+                athleteSelect.appendChild(option);
+            });
+            if (athletes.length > 0) {
+                athleteSelect.value = athletes[0];
+                updateChart();
+            }
+        }
+
+        // --- CHART LOGIC ---
+        function calculateMedalistTrajectory(selectedClass) {
+            const medalistsForClass = medalistData.filter(m => m.Class === selectedClass && (m.Year === '2021' || m.Year === '2024'));
+            if (medalistsForClass.length === 0) return null;
+
+            const allTrajectories = [];
+            let maxLength = 0;
+
+            for (const medalist of medalistsForClass) {
+                const medalistHistory = rankingData
+                    .filter(r => r.Athlete === medalist.Athlete && r.Class === selectedClass && parseInt(r.Year) <= parseInt(medalist.Year))
+                    .sort((a, b) => parseInt(a.Year) - parseInt(b.Year) || parseInt(a['Ranking Release']) - parseInt(b['Ranking Release']))
+                    .map(r => parseInt(r.Rank));
+                
+                if (medalistHistory.length > 0) {
+                    allTrajectories.push(medalistHistory);
+                    if (medalistHistory.length > maxLength) {
+                        maxLength = medalistHistory.length;
+                    }
+                }
+            }
+
+            if (allTrajectories.length === 0) return null;
+
+            const averagedTrajectory = [];
+            for (let i = 0; i < maxLength; i++) {
+                let sumOfRanks = 0;
+                let count = 0;
+                for (const trajectory of allTrajectories) {
+                    const index = trajectory.length - 1 - i;
+                    if (index >= 0) {
+                        sumOfRanks += trajectory[index];
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    averagedTrajectory.push(sumOfRanks / count);
+                } else {
+                    averagedTrajectory.push(null);
+                }
+            }
+            
+            return averagedTrajectory.reverse();
+        }
+
+        function updateChart() {
+            const selectedClass = document.getElementById('class-select').value;
+            const selectedAthlete = document.getElementById('athlete-select').value;
+            const showMedalistAvg = document.getElementById('medalist-toggle').checked;
+
+            if (!selectedClass || !selectedAthlete) return;
+
+            const athleteData = rankingData
+                .filter(item => item.Class === selectedClass && item.Athlete === selectedAthlete)
+                .sort((a, b) => parseInt(a.Year) - parseInt(b.Year) || parseInt(a['Ranking Release']) - parseInt(b['Ranking Release']));
+
+            const labels = athleteData.map(d => `${d.Year} R${d['Ranking Release']}`);
+            const ranks = athleteData.map(d => parseInt(d.Rank));
+            
+            const datasets = [];
+
+            // Dataset for the selected athlete
+            datasets.push({
+                type: 'line',
+                label: `${selectedAthlete}'s World Ranking`,
+                data: ranks,
+                borderColor: 'var(--brand-teal)',
+                backgroundColor: 'var(--brand-teal)',
+                tension: 0.1,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                order: 2
+            });
+
+            if (showMedalistAvg) {
+                const avgTrajectory = calculateMedalistTrajectory(selectedClass);
+                if (avgTrajectory) {
+                    let alignedTrajectoryData;
+                    if (avgTrajectory.length > labels.length) {
+                        alignedTrajectoryData = avgTrajectory.slice(avgTrajectory.length - labels.length);
+                    } else {
+                        const padding = new Array(labels.length - avgTrajectory.length).fill(null);
+                        alignedTrajectoryData = [...padding, ...avgTrajectory];
+                    }
+
+                    datasets.push({
+                        type: 'line',
+                        label: `Avg. Medalist Trajectory`,
+                        data: alignedTrajectoryData,
+                        borderColor: 'rgba(239, 68, 68, 0.8)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderWidth: 3,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        tension: 0.1,
+                        order: 1 
+                    });
+                }
+            }
+            
+            drawChart({ labels, datasets });
+        }
+
+        function drawChart(chartConfig) {
+            const { labels, datasets } = chartConfig;
+            const maxRankFromData = Math.max(...datasets.flatMap(ds => ds.data).filter(d => d !== null));
+            const maxRank = Math.max(maxRankFromData, 110);
+
+            const backgroundColors = labels.map(l => parseInt(l.split(' ')[0]) % 2 === 0 ? 'rgba(230, 230, 230, 0.4)' : 'rgba(0, 0, 0, 0)');
+            const shadingDataset = {
+                type: 'bar',
+                label: 'Year Shading',
+                data: labels.map(() => maxRank),
+                backgroundColor: backgroundColors,
+                barPercentage: 1.0,
+                categoryPercentage: 1.0,
+                order: 3,
+                hidden: true,
+                tooltips: { enabled: false }
+            };
+
+            const finalDatasets = [shadingDataset, ...datasets];
+
+            const ctx = document.getElementById('ranking-chart').getContext('2d');
+            if (myChart) myChart.destroy();
+            
+            myChart = new Chart(ctx, {
+                data: { labels, datasets: finalDatasets },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    scales: {
+                        y: { reverse: false, title: { display: true, text: 'World Rank' }, min: 0, max: maxRank },
+                        x: { title: { display: true, text: 'Year and Ranking Release' }, stacked: true }
+                    },
+                    plugins: {
+                        legend: { labels: { filter: (item) => item.datasetIndex !== 0 } },
+                        tooltip: {
+                            filter: (item) => item.dataset.order !== 3,
+                            callbacks: { label: context => `Rank ${context.parsed.y.toFixed(1)}` }
+                        },
+                        annotation: {
+                            annotations: {
+                                top20: { type: 'line', yMin: 20, yMax: 20, borderColor: 'rgba(255, 99, 132, 0.8)', borderWidth: 2, borderDash: [6, 6], label: { content: 'Top 20', enabled: true, position: 'start', backgroundColor: 'rgba(255, 99, 132, 0.8)', font: { weight: 'bold' } } },
+                                top100: { type: 'line', yMin: 100, yMax: 100, borderColor: 'rgba(54, 162, 235, 0.8)', borderWidth: 2, borderDash: [6, 6], label: { content: 'Top 100', enabled: true, position: 'start', backgroundColor: 'rgba(54, 162, 235, 0.8)', font: { weight: 'bold' } } }
+                            }
+                        },
+                        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
+                    }
+                }
+            });
+        }
+        
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInitialData(); // Fetch data automatically on page load
+            
+            document.getElementById('class-select').addEventListener('change', e => populateAthleteFilter(e.target.value));
+            document.getElementById('athlete-search').addEventListener('input', e => populateAthleteFilter(document.getElementById('class-select').value, e.target.value));
+            document.getElementById('athlete-select').addEventListener('change', updateChart);
+            document.getElementById('medalist-toggle').addEventListener('change', updateChart);
+            document.getElementById('reset-zoom-btn').addEventListener('click', () => myChart?.resetZoom());
+        });
+
+        // --- UTILITY FUNCTIONS ---
+        function showMessage(message, isError = true) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50'; // Adjusted top position
+            box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
+            box.classList.remove('hidden', 'opacity-0');
+            setTimeout(() => {
+                box.classList.add('opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

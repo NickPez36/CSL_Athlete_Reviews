@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom - Splits Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Set the custom font for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Define the color palette as CSS Variables for easy use */
+        :root {
+            --brand-dark-blue: #0A2B4C;
+            --brand-teal: #0097A7;
+            --brand-light-blue: #4DD0E1;
+            --neutral-white: #FFFFFF;
+            --neutral-light-gray: #F3F4F6;
+            --neutral-text: #1F2937;
+            --feedback-error: #DC2626;
+            --feedback-success: #16A34A;
+        }
+
+        /* Apply custom colors using the variables */
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .text-brand-dark-blue { color: var(--brand-dark-blue); }
+        .text-brand-teal { color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+        .ring-brand-teal { --tw-ring-color: var(--brand-teal); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+        .text-feedback-error { color: var(--feedback-error); }
+        .bg-feedback-error { background-color: var(--feedback-error); }
+        .bg-feedback-success { background-color: var(--feedback-success); }
+        
+        /* Custom styles */
+        .gold { background-color: #FFD700; color: #000; font-weight: bold; }
+        .silver { background-color: #C0C0C0; color: #000; font-weight: bold; }
+        .bronze { background-color: #CD7F32; color: #fff; font-weight: bold; }
+        table th, table td {
+            text-align: center;
+            padding: 12px 15px;
+        }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: var(--brand-teal);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: var(--brand-teal);
+        }
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <!-- Message Box for notifications -->
+    <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col">
+
+        <!-- Header Navigation -->
+        <nav class="bg-brand-dark-blue shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0">
+                        <img 
+                            src="assets/Paddle Aus Logo.png" 
+                            alt="Paddle Australia Logo" 
+                            class="h-12"
+                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                    </div>
+                    <div class="hidden md:block">
+                        <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
+                    </div>
+                    <div>
+                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                
+                <!-- Page Header -->
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-neutral-text">Splits Report & Analysis</h1>
+                    <p class="mt-2 text-lg text-gray-600">Select a race file to analyze detailed split data.</p>
+                </header>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
+                    <!-- File Selection Dropdown -->
+                    <div class="max-w-xl mx-auto">
+                         <label for="file-select" class="block text-sm font-medium text-gray-700 mb-1">Select a Race File to Analyze</label>
+                         <select id="file-select" class="block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm"></select>
+                    </div>
+                     <!-- Event Details Display -->
+                    <div id="event-details-container" class="text-center text-gray-600 mt-4 border-t pt-4 hidden">
+                        <span id="competition-name" class="font-semibold text-brand-dark-blue"></span> | 
+                        <span id="event-class" class="font-semibold text-brand-dark-blue"></span> | 
+                        <span id="event-phase" class="font-semibold text-brand-dark-blue"></span> | 
+                        <span id="event-year" class="font-semibold text-brand-dark-blue"></span>
+                    </div>
+                </div>
+
+                <div id="controls-and-table-wrapper" class="hidden">
+                    <!-- Toggle Switch -->
+                    <div id="toggle-container" class="flex items-center justify-center space-x-4 mb-8">
+                         <span class="text-sm font-medium text-gray-900">Show Raw Values</span>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label for="toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">Show % Behind Fastest</span>
+                    </div>
+
+                    <div id="table-container" class="bg-white rounded-xl shadow-lg overflow-x-auto"></div>
+                </div>
+
+                <!-- Detailed Analysis Section -->
+                <div id="analysis-container" class="mt-12 hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Detailed Athlete Analysis</h2>
+                        <div class="max-w-md mx-auto">
+                            <label for="athlete-select" class="block text-sm font-medium text-gray-700">Select Athlete</label>
+                            <select id="athlete-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm"></select>
+                        </div>
+                        <div id="analysis-table-container" class="mt-6 overflow-x-auto"></div>
+                        <!-- Chart Container -->
+                        <div id="chart-wrapper" class="mt-8">
+                            <canvas id="cumulative-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                 &copy;2025 Paddle Australia. All rights reserved.
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- Global State ---
+        let originalProcessedData = null;
+        let isPercentView = false;
+        let cumulativeChart = null;
+        let currentEventDetails = {};
+
+        // --- Performance Band Data ---
+        const performanceBands = {
+          "K1M": { "Final": { "description": "Performance band to medal in a K1M Final", "upper": { "Split 1": 108.75, "Split 2": 107.53, "Split 3": 107.58, "Split 4": 106.78, "Split 5": 106.41, "Split 6": 106.96 }, "lower": { "Split 1": 102.28, "Split 2": 102.33, "Split 3": 103.2, "Split 4": 104.22, "Split 5": 104.4, "Split 6": 106.96 } }, "Heat 1": { "description": "Performance band to qualify from K1M Heat 1", "upper": { "Split 1": 108.59, "Split 2": 109.49, "Split 3": 109.3, "Split 4": 109.13, "Split 5": 108.59, "Split 6":108.89 }, "lower": { "Split 1": 102.85, "Split 2": 104.14, "Split 3": 105.76, "Split 4": 105.68, "Split 5": 106.07, "Split 6": 106.63 } }, "Semi-Final": { "description": "Performance band to qualify from K1M Semi-Final", "upper": { "Split 1": 108.6, "Split 2": 109.5, "Split 3": 109.4, "Split 4": 109.2, "Split 5": 108.6, "Split 6":108.9 }, "lower": { "Split 1": 102.9, "Split 2": 104.2, "Split 3": 105.8, "Split 4": 105.7, "Split 5": 106.1, "Split 6": 106.7 } } },
+          "K1W": { "Final": { "description": "Performance band to medal in a K1W Final", "upper": { "Split 1": 105.82, "Split 2": 105.94, "Split 3": 104.83, "Split 4": 104.92, "Split 5": 106.01, "Split 6": 106.74 }, "lower": { "Split 1": 100.17, "Split 2": 102.55, "Split 3": 104.22, "Split 4": 103.84, "Split 5": 104.53, "Split 6": 104.93 } }, "Heat 1": { "description": "Performance band to qualify from K1W Heat 1", "upper": { "Split 1": 113.49, "Split 2": 111.91, "Split 3": 110.79, "Split 4": 110.83, "Split 5": 111.48, "Split 6": 110.4 }, "lower": { "Split 1": 104.88, "Split 2": 105.55, "Split 3": 107.75, "Split 4": 108.42, "Split 5": 107.52, "Split 6": 109.06 } }, "Semi-Final": { "description": "Performance band to qualify from K1W Semi-Final", "upper": { "Split 1": 113.5, "Split 2": 112.0, "Split 3": 110.8, "Split 4": 110.9, "Split 5": 111.5, "Split 6": 110.5 }, "lower": { "Split 1": 104.9, "Split 2": 105.6, "Split 3": 107.8, "Split 4": 108.5, "Split 5": 107.6, "Split 6": 109.1 } } },
+          "C1M": { "Final": { "description": "Performance band to medal in a C1M Final", "upper": { "Split 1": 106.58, "Split 2": 107.01, "Split 3": 106.78, "Split 4": 105.79, "Split 5": 106.26, "Split 6": 106.81 }, "lower": { "Split 1": 102.57, "Split 2": 103.59, "Split 3": 104.57, "Split 4": 104.41, "Split 5": 104.44, "Split 6": 103.74 } }, "Heat 1": { "description": "Performance band to qualify from C1M Heat 1", "upper": { "Split 1": 108.7, "Split 2": 111.34, "Split 3": 110.4, "Split 4": 109.06, "Split 5": 109.81, "Split 6": 112.14 }, "lower": { "Split 1": 104, "Split 2": 105.41, "Split 3": 105.13, "Split 4": 106.83, "Split 5": 106.98, "Split 6": 108.47 } }, "Semi-Final": { "description": "Performance band to qualify from C1M Semi-Final", "upper": { "Split 1": 108.8, "Split 2": 111.4, "Split 3": 110.5, "Split 4": 109.1, "Split 5": 109.9, "Split 6": 112.2 }, "lower": { "Split 1": 104.1, "Split 2": 105.5, "Split 3": 105.2, "Split 4": 106.9, "Split 5": 107.0, "Split 6": 108.5 } } },
+          "C1W": { "Final": { "description": "Performance band to medal in a C1W Final", "upper": { "Split 1": 112.1, "Split 2": 111.26, "Split 3": 107.73, "Split 4": 107.1, "Split 5": 107.21, "Split 6": 113.14 }, "lower": { "Split 1": 102.64, "Split 2": 102.49, "Split 3": 104.55, "Split 4": 105.24, "Split 5": 104.65, "Split 6": 107.68 } }, "Heat 1": { "description": "Performance band to qualify from C1W Heat 1", "upper": { "Split 1": 116.57, "Split 2": 119.03, "Split 3": 118.38, "Split 4": 117.97, "Split 5": 117.24, "Split 6": 117.14 }, "lower": { "Split 1": 111.11, "Split 2": 112.26, "Split 3": 112.49, "Split 4": 112.26, "Split 5": 111.77, "Split 6": 111.97 } }, "Semi-Final": { "description": "Performance band to qualify from C1W Semi-Final", "upper": { "Split 1": 116.6, "Split 2": 119.1, "Split 3": 118.4, "Split 4": 118.0, "Split 5": 117.3, "Split 6": 117.2 }, "lower": { "Split 1": 111.2, "Split 2": 112.3, "Split 3": 112.5, "Split 4": 112.3, "Split 5": 111.8, "Split 6": 112.0 } } }
+        };
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.getElementById('file-select').addEventListener('change', handleFileSelect);
+        document.getElementById('toggle').addEventListener('change', handleToggle);
+        document.getElementById('athlete-select').addEventListener('change', handleAnalysisSelection);
+
+        /**
+         * Initializes the application by fetching the list of files from the GitHub repo
+         * and populating the file dropdown.
+         */
+        async function initializeApp() {
+            // IMPORTANT: Replace with your GitHub username and repository name.
+            const githubOwner = 'NickPez36';
+            const githubRepo = 'CSL_Athlete_Reviews';
+            
+            const apiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/splits`;
+            const select = document.getElementById('file-select');
+            select.innerHTML = '<option value="">Loading files...</option>';
+
+            try {
+                // Check if placeholder values have been changed
+                if (githubOwner === 'NickPez36' || githubRepo === 'CSL_Athlete_Reviews') {
+                    throw new Error("Please update the GitHub owner and repository name in the script.");
+                }
+
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`GitHub API error! Status: ${response.status}. Check username/repo and ensure the repo is public.`);
+                }
+                const files = await response.json();
+                
+                const jsonFiles = files
+                    .filter(file => file.type === 'file' && file.name.endsWith('.json'))
+                    .map(file => file.name);
+
+                if (jsonFiles.length === 0) {
+                     throw new Error("No .json files found in the /data/splits directory.");
+                }
+
+                select.innerHTML = '<option value="">Select a Race File...</option>';
+                jsonFiles.forEach(fileName => {
+                    const option = document.createElement('option');
+                    option.value = fileName;
+                    option.textContent = fileName.replace('.json', '').replace(/_/g, ' ');
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Initialization Error:", error);
+                showMessage(error.message, true);
+                select.innerHTML = `<option value="">${error.message}</option>`;
+            }
+        }
+
+        /**
+         * Main function to handle file selection from the dropdown.
+         */
+        async function handleFileSelect() {
+            const fileName = document.getElementById('file-select').value;
+            if (!fileName) {
+                document.getElementById('table-container').innerHTML = '';
+                document.getElementById('analysis-container').classList.add('hidden');
+                document.getElementById('event-details-container').classList.add('hidden');
+                document.getElementById('controls-and-table-wrapper').classList.add('hidden');
+                return;
+            }
+            
+            parseFilenameForDetails(fileName);
+
+            try {
+                const response = await fetch(`data/splits/${fileName}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const rawData = await response.json();
+
+                const standardData = normalizeData(rawData);
+                originalProcessedData = processTableData(standardData);
+                
+                isPercentView = false;
+                document.getElementById('toggle').checked = false;
+
+                displayTable();
+                populateAthleteDropdown();
+                
+                document.getElementById('controls-and-table-wrapper').classList.remove('hidden');
+                document.getElementById('analysis-container').classList.remove('hidden');
+                showMessage('Data loaded successfully!', false);
+            } catch (error) {
+                console.error("Error loading or processing file:", error);
+                showMessage(`Error loading ${fileName}. Please check the file exists and is valid.`, true);
+            }
+        }
+
+        /**
+         * Parses the filename to extract and display event details.
+         */
+        function parseFilenameForDetails(fileName) {
+            const nameWithoutExt = fileName.replace('.json', '');
+            const parts = nameWithoutExt.split('_');
+            
+            if (parts.length < 4) {
+                currentEventDetails = {};
+                document.getElementById('event-details-container').classList.add('hidden');
+                return;
+            }
+
+            const [comp, eventClass, ...phaseParts] = parts;
+            const year = phaseParts.pop();
+            const phase = phaseParts.join(' ');
+            
+            const compMap = { "WC1": "World Cup 1", "WC2": "World Cup 2", "WC3": "World Cup 3", "WC4": "World Cup 4", "WC5": "World Cup 5", "WCH": "World Championships" };
+            const phaseMap = { "FINAL": "Final", "SEMI-FINAL": "Semi-Final", "HEAT 1": "Heat 1" };
+
+            currentEventDetails = {
+                competition: compMap[comp.toUpperCase()] || comp,
+                eventClass: eventClass,
+                eventPhase: phaseMap[phase.toUpperCase()] || phase,
+                year: year
+            };
+
+            document.getElementById('competition-name').textContent = currentEventDetails.competition;
+            document.getElementById('event-class').textContent = currentEventDetails.eventClass;
+            document.getElementById('event-phase').textContent = currentEventDetails.eventPhase;
+            document.getElementById('event-year').textContent = currentEventDetails.year;
+            document.getElementById('event-details-container').classList.remove('hidden');
+        }
+        
+        /**
+         * Main handler for when an athlete is selected from the dropdown.
+         */
+        function handleAnalysisSelection() {
+            displayAnalysisTable();
+            displayCumulativeChart();
+        }
+
+        /**
+         * Populates the athlete selection dropdown menu.
+         */
+        function populateAthleteDropdown() {
+            const select = document.getElementById('athlete-select');
+            select.innerHTML = ''; 
+
+            const defaultOption = document.createElement('option');
+            defaultOption.textContent = 'Select an Athlete...';
+            defaultOption.value = '';
+            select.appendChild(defaultOption);
+
+            originalProcessedData.rows.forEach(row => {
+                const option = document.createElement('option');
+                option.textContent = row.Name;
+                option.value = row.Name;
+                select.appendChild(option);
+            });
+            
+            document.getElementById('analysis-table-container').innerHTML = '';
+            if (cumulativeChart) {
+                cumulativeChart.destroy();
+                cumulativeChart = null;
+            }
+        }
+
+        /**
+         * Displays the detailed analysis table for the selected athlete.
+         */
+        function displayAnalysisTable() {
+            const selectedAthleteName = document.getElementById('athlete-select').value;
+            const container = document.getElementById('analysis-table-container');
+
+            if (!selectedAthleteName) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const virtualBestRow = calculateVirtualBest();
+            const selectedAthleteRow = originalProcessedData.rows.find(row => row.Name === selectedAthleteName);
+            
+            const headers = originalProcessedData.headers;
+            const tableData = [virtualBestRow, selectedAthleteRow];
+
+            const table = document.createElement('table');
+            table.className = 'min-w-full divide-y divide-gray-200';
+            
+            const thead = document.createElement('thead');
+            thead.className = 'bg-gray-50';
+            const headerRow = document.createElement('tr');
+            headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.className = 'px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider';
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            tbody.className = 'bg-white divide-y divide-gray-200';
+            tableData.forEach(rowData => {
+                const tr = document.createElement('tr');
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
+                    let value = rowData[header] || '-';
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                        value = numValue.toFixed(2);
+                    }
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        /**
+         * Displays the cumulative percentage difference chart with performance bands.
+         */
+        function displayCumulativeChart() {
+            const selectedAthleteName = document.getElementById('athlete-select').value;
+            const ctx = document.getElementById('cumulative-chart').getContext('2d');
+
+            if (cumulativeChart) {
+                cumulativeChart.destroy();
+                cumulativeChart = null;
+            }
+
+            if (!selectedAthleteName) return;
+
+            const virtualBestRow = calculateVirtualBest();
+            const selectedAthleteRow = originalProcessedData.rows.find(row => row.Name === selectedAthleteName);
+
+            const virtualBestCumulative = calculateCumulativeData(virtualBestRow);
+            const athleteCumulative = calculateCumulativeData(selectedAthleteRow);
+            
+            const percentDifferenceData = calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative);
+            const splitLabels = originalProcessedData.headers.filter(h => h.startsWith('Split'));
+            
+            const datasets = [{
+                label: 'Cumulative % Behind Virtual Best',
+                data: percentDifferenceData,
+                borderColor: 'var(--brand-teal)',
+                backgroundColor: 'rgba(0, 151, 167, 0.5)',
+                tension: 0.1,
+                spanGaps: false,
+                order: 0 
+            }];
+
+            if (currentEventDetails.eventClass && currentEventDetails.eventPhase && performanceBands[currentEventDetails.eventClass]?.[currentEventDetails.eventPhase]) {
+                const bands = performanceBands[currentEventDetails.eventClass][currentEventDetails.eventPhase];
+                const lowerBand = splitLabels.map(label => (bands.lower[label] || 100) - 100);
+                const upperBand = splitLabels.map(label => (bands.upper[label] || 100) - 100);
+                
+                datasets.push({
+                    label: 'Lower Performance Band',
+                    data: lowerBand,
+                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                    borderColor: 'transparent',
+                    pointRadius: 0,
+                    fill: '+1',
+                    order: 1
+                });
+                datasets.push({
+                    label: 'Upper Performance Band',
+                    data: upperBand,
+                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                    borderColor: 'transparent',
+                    pointRadius: 0,
+                    order: 2
+                });
+            }
+
+            const paddedLabels = ['', ...splitLabels, ''];
+            datasets.forEach(ds => {
+                ds.data = [null, ...ds.data, null];
+            });
+
+            cumulativeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: paddedLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { filter: item => item.datasetIndex === 0 } },
+                        title: { display: true, text: `Cumulative % Behind Virtual Best for ${selectedAthleteName}` },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex > 0) return null;
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y.toFixed(2) + '%';
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Split' } },
+                        y: { min: 0, title: { display: true, text: 'Cumulative % Behind' }, ticks: { callback: value => value + '%' } }
+                    }
+                }
+            });
+        }
+        
+        // --- Utility and Data Processing Functions ---
+        
+        function calculateVirtualBest() { const { headers, rows } = originalProcessedData; const virtualBest = { Name: 'Virtual Best', Phase: '-' }; let virtualTotal = 0; headers.forEach(header => { if (header.startsWith('Split')) { let bestSplit = Infinity; rows.forEach(row => { const splitValue = parseFloat(row[header]); if (!isNaN(splitValue) && splitValue > 0 && splitValue < bestSplit) { bestSplit = splitValue; } }); virtualBest[header] = bestSplit === Infinity ? 0 : bestSplit; virtualTotal += virtualBest[header]; } }); virtualBest['Total'] = virtualTotal; return virtualBest; }
+        function calculateCumulativeData(rowData) { const cumulativeTimes = []; let currentTotal = 0; let missedSplit = false; const splitHeaders = originalProcessedData.headers.filter(h => h.startsWith('Split')); for (const header of splitHeaders) { if (missedSplit) { cumulativeTimes.push(null); continue; } const splitValue = parseFloat(rowData[header]); if (!isNaN(splitValue) && splitValue > 0) { currentTotal += splitValue; cumulativeTimes.push(currentTotal); } else { missedSplit = true; cumulativeTimes.push(null); } } return cumulativeTimes; }
+        function calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative) { const percentDifference = []; for (let i = 0; i < athleteCumulative.length; i++) { const athleteTime = athleteCumulative[i]; const bestTime = virtualBestCumulative[i]; if (bestTime === null || athleteTime === null || bestTime === 0) { percentDifference.push(null); } else { const difference = ((athleteTime - bestTime) / bestTime) * 100; percentDifference.push(difference); } } return percentDifference; }
+        function handleToggle() { isPercentView = document.getElementById('toggle').checked; displayTable(); }
+        function normalizeData(data) { if (!Array.isArray(data) || data.length === 0) return []; if (Object.keys(data[0])[0].includes(';')) { return parseAndTransformData(data); } return data; }
+        function parseAndTransformData(rawData) { return rawData.map(entry => { const keyString = Object.keys(entry)[0]; const valueString = entry[keyString]; if (typeof keyString !== 'string' || typeof valueString !== 'string') return {}; const headers = keyString.split(';'); const values = valueString.split(';'); const newObject = {}; headers.forEach((header, index) => { newObject[header] = values[index]; }); return newObject; }); }
+        function processTableData(data) { if (!data || !Array.isArray(data) || data.length === 0) { return { headers: [], rows: [] }; } const columnsToExclude = ["P", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"]; const columnRenames = { "S1": "Split 1", "S2": "Split 2", "S3": "Split 3", "S4": "Split 4", "S5": "Split 5", "S6": "Split 6", "S7": "Split 7", "S8": "Split 8" }; const originalHeaders = Object.keys(data[0]); const headers = originalHeaders.filter(h => !columnsToExclude.includes(h)).map(h => columnRenames[h] || h); const rows = data.map(row => { const newRow = {}; for (const key in row) { if (columnsToExclude.includes(key)) continue; const newKey = columnRenames[key] || key; let value = row[key]; if (key === "Phase" && value === "FL") { value = "Final"; } else if (key === "Phase" && value === "H1") { value = "Heat 1"; } else if (key === "Phase" && value === "SF") { value = "Semi-Final"; } newRow[newKey] = value; } return newRow; }).filter(row => { if (row.Total) { return parseFloat(row.Total) > 0; } return true; }); return { headers, rows }; }
+        function displayTable() { if (!originalProcessedData) return; const dataToDisplay = isPercentView ? calculatePercentageData() : originalProcessedData; const { headers, rows } = dataToDisplay; const container = document.getElementById('table-container'); if (headers.length === 0 || rows.length === 0) { container.innerHTML = '<p class="text-center p-8 text-gray-500">No data to display.</p>'; return; } const table = document.createElement('table'); table.className = 'min-w-full divide-y divide-gray-200'; const thead = document.createElement('thead'); thead.className = 'bg-gray-50'; const headerRow = document.createElement('tr'); headers.forEach(headerText => { const th = document.createElement('th'); th.scope = 'col'; th.className = 'px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'; th.textContent = headerText; headerRow.appendChild(th); }); thead.appendChild(headerRow); table.appendChild(thead); const tbody = document.createElement('tbody'); tbody.className = 'bg-white divide-y divide-gray-200'; rows.forEach(rowData => { const tr = document.createElement('tr'); headers.forEach(header => { const td = document.createElement('td'); td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700'; let value = rowData[header]; if (!isPercentView) { const numValue = parseFloat(value); if (!isNaN(numValue)) { value = numValue.toFixed(2); } } td.textContent = value; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); container.innerHTML = ''; container.appendChild(table); highlightTopValues(table, headers); }
+        function calculatePercentageData() { const { headers, rows } = originalProcessedData; const newRows = JSON.parse(JSON.stringify(rows)); const splitHeaders = headers.filter(h => h.startsWith('Split')); headers.forEach(header => { const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); if (!isTimeMetric) return; let bestValue = Infinity; rows.forEach(row => { const value = parseFloat(row[header]); if (isNaN(value) || value <= 0) return; if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(row[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) return; } if (value < bestValue) { bestValue = value; } }); if (bestValue === Infinity) return; newRows.forEach((row, rowIndex) => { const originalRow = rows[rowIndex]; const value = parseFloat(originalRow[header]); if (isNaN(value)) return; if (value === 0) { row[header] = 'N/A'; return; } if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) { row[header] = '-'; return; } } if (value === bestValue) { row[header] = 'Fastest'; } else { const percentage = ((value - bestValue) / bestValue) * 100; row[header] = `+${percentage.toFixed(2)}%`; } }); }); return { headers, rows: newRows }; }
+        function highlightTopValues(table, headers) { const tbody = table.querySelector('tbody'); if (!tbody) return; headers.forEach((header, colIndex) => { const values = []; for (let i = 0; i < tbody.rows.length; i++) { const cell = tbody.rows[i].cells[colIndex]; const rawValue = cell.textContent; let numericValue; if (isPercentView) { if (rawValue === 'Fastest') numericValue = 0; else if (rawValue === 'N/A' || rawValue === '-') continue; else numericValue = parseFloat(rawValue.replace('+', '').replace('%', '')); } else { numericValue = parseFloat(rawValue); } if (isNaN(numericValue)) { continue; } if (!isPercentView && numericValue === 0) { continue; } if (header === 'Total') { let hasZeroSplit = false; const originalRow = originalProcessedData.rows[i]; for (const splitHeader of originalProcessedData.headers.filter(h => h.startsWith('Split'))) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) continue; } values.push({ value: numericValue, rowIndex: i }); } if (values.length < 1) return; const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); values.sort((a, b) => isTimeMetric ? a.value - b.value : b.value - a.value); const topValues = values.slice(0, 3); if (topValues[0]) { tbody.rows[topValues[0].rowIndex].cells[colIndex].classList.add('gold'); } if (topValues[1]) { tbody.rows[topValues[1].rowIndex].cells[colIndex].classList.add('silver'); } if (topValues[2]) { tbody.rows[topValues[2].rowIndex].cells[colIndex].classList.add('bronze'); } }); }
+        function showMessage(message, isError = true) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
+            box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
+            box.classList.remove('hidden', 'opacity-0');
+            setTimeout(() => {
+                box.classList.add('opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>

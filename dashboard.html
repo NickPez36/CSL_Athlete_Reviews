@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom Analytics - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Set the custom font for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Define the color palette as CSS Variables for easy use */
+        :root {
+            --brand-dark-blue: #0A2B4C;
+            --brand-teal: #0097A7;
+            --brand-light-blue: #4DD0E1;
+            --neutral-white: #FFFFFF;
+            --neutral-light-gray: #F3F4F6;
+            --neutral-text: #1F2937;
+        }
+
+        /* Apply custom colors using the variables */
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .text-brand-dark-blue { color: var(--brand-dark-blue); }
+        .text-brand-teal { color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+
+        /* Custom style for tile transitions */
+        .tile {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col">
+
+        <!-- Header Navigation -->
+        <nav class="bg-brand-dark-blue shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0">
+                        <img 
+                            src="assets/Paddle Aus Logo.png" 
+                            alt="Paddle Australia Logo" 
+                            class="h-12"
+                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                    </div>
+                    <div class="hidden md:block">
+                        <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
+                    </div>
+                    <div>
+                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                
+                <!-- Page Header -->
+                <header class="mb-10">
+                    <h1 class="text-3xl font-bold text-neutral-text">Welcome to the Dashboard</h1>
+                    <p class="mt-2 text-lg text-gray-600">Select a report below to view detailed analytics.</p>
+                </header>
+
+                <!-- Tiles Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                    <!-- Tile 1: World Rankings -->
+                    <a href="world_rankings.html" class="tile block bg-white rounded-xl overflow-hidden shadow-md">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <!-- Trophy Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  <path d="M12 14a2 2 0 100-4 2 2 0 000 4z" />
+                                </svg>
+                                <h2 class="ml-3 text-xl font-bold text-brand-dark-blue">World Ranking Dashboards</h2>
+                            </div>
+                            <p class="mt-2 text-gray-600">Explore interactive dashboards of current and historical world rankings.</p>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <span class="inline-block bg-brand-light-blue/20 text-brand-teal text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Rankings</span>
+                        </div>
+                    </a>
+
+                    <!-- Tile 2: Competition Results -->
+                    <a href="competition_results.html" class="tile block bg-white rounded-xl overflow-hidden shadow-md">
+                        <div class="p-6">
+                             <div class="flex items-center mb-4">
+                                <!-- Clipboard Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                <h2 class="ml-3 text-xl font-bold text-brand-dark-blue">Competition Results & Career Summary</h2>
+                            </div>
+                            <p class="mt-2 text-gray-600">View detailed results from past competitions and athlete career summaries.</p>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <span class="inline-block bg-brand-light-blue/20 text-brand-teal text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Results</span>
+                        </div>
+                    </a>
+
+                    <!-- Tile 3: Splits Analysis -->
+                    <a href="splits_analysis.html" class="tile block bg-white rounded-xl overflow-hidden shadow-md">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <!-- Clock Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h2 class="ml-3 text-xl font-bold text-brand-dark-blue">Splits Report & Analysis</h2>
+                            </div>
+                            <p class="mt-2 text-gray-600">Analyze gate splits and performance metrics from race data.</p>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <span class="inline-block bg-brand-light-blue/20 text-brand-teal text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">Analysis</span>
+                        </div>
+                    </a>
+
+                </div>
+
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                 &copy;2025 Paddle Australia. All rights reserved.
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+</html>

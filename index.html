@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom Analytics - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Set the custom font for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Define the color palette as CSS Variables for easy use */
+        :root {
+            --brand-dark-blue: #0A2B4C;
+            --brand-teal: #0097A7;
+            --brand-light-blue: #4DD0E1;
+            --neutral-white: #FFFFFF;
+            --neutral-light-gray: #F3F4F6;
+            --neutral-text: #1F2937;
+            --feedback-error: #DC2626; /* Red for error messages */
+        }
+
+        /* Apply custom colors using the variables */
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .text-feedback-error { color: var(--feedback-error); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            
+            <!-- Login Card -->
+            <div class="bg-white rounded-xl shadow-2xl p-8">
+                
+                <!-- Logo -->
+                <div class="flex justify-center mb-6">
+                    <img 
+                        src="assets/Paddle Aus Logo.png" 
+                        alt="Paddle Australia Logo" 
+                        class="h-16"
+                        onerror="this.onerror=null; this.src='https://placehold.co/200x60/0a2b4c/ffffff?text=Paddle+Australia';">
+                </div>
+
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h1 class="text-2xl font-bold text-neutral-text">Slalom Analytics Portal</h1>
+                    <p class="text-gray-500 mt-1">Please enter the password to continue</p>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" novalidate>
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="password" name="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-opacity-50 focus:ring-brand-teal focus:border-brand-teal transition duration-200" placeholder="••••••••">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-brand-dark-blue text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-teal focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        Login
+                    </button>
+                </form>
+
+                <!-- Message Area -->
+                <div id="message-area" class="text-center mt-4 text-sm font-medium text-feedback-error h-5">
+                    <!-- Error messages will be displayed here -->
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <p class="text-center text-gray-500 text-xs mt-6">
+                &copy;2025 Paddle Australia. All rights reserved.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- Login Form Logic ---
+
+        // Get references to the DOM elements
+        const loginForm = document.getElementById('login-form');
+        const passwordInput = document.getElementById('password');
+        const messageArea = document.getElementById('message-area');
+
+        // IMPORTANT: This is a simple, insecure password for demonstration purposes only.
+        // In a real application, never store passwords in client-side code.
+        // Use a secure backend authentication system.
+        const CORRECT_PASSWORD = 'paddle2025';
+
+        // Add a submit event listener to the form
+        loginForm.addEventListener('submit', function(event) {
+            // Prevent the form from submitting the traditional way
+            event.preventDefault();
+
+            // Get the password entered by the user
+            const enteredPassword = passwordInput.value;
+
+            // Clear any previous messages
+            messageArea.textContent = '';
+
+            // Check if the password is correct
+            if (enteredPassword === CORRECT_PASSWORD) {
+                // On successful login, show a success message and redirect.
+                // For this demo, we will redirect to a placeholder 'dashboard.html' page.
+                messageArea.textContent = 'Login successful! Redirecting...';
+                messageArea.classList.remove('text-feedback-error');
+                
+                // Redirect to the main analytics page after a short delay
+                setTimeout(() => {
+                    // You would replace 'dashboard.html' with the actual page for your analytics
+                    window.location.href = 'dashboard.html'; 
+                }, 1500);
+
+            } else {
+                // If the password is incorrect, show an error message.
+                messageArea.textContent = 'Incorrect password. Please try again.';
+                
+                // Add a shake animation for visual feedback
+                loginForm.parentElement.classList.add('animate-shake');
+                setTimeout(() => {
+                    loginForm.parentElement.classList.remove('animate-shake');
+                }, 500);
+            }
+        });
+
+        // Add a simple shake animation for failed login attempts
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+</body>
+</html>

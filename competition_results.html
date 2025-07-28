@@ -9,24 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
-        /* Set the custom font for the page */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        /* Define the color palette as CSS Variables for easy use */
-        :root {
-            --brand-dark-blue: #0A2B4C;
-            --brand-teal: #0097A7;
-            --brand-light-blue: #4DD0E1;
-            --neutral-white: #FFFFFF;
-            --neutral-light-gray: #F3F4F6;
-            --neutral-text: #1F2937;
-            --feedback-error: #DC2626;
-            --feedback-success: #16A34A;
-        }
-
-        /* Apply custom colors using the variables */
+        :root { --brand-dark-blue: #0A2B4C; --brand-teal: #0097A7; --brand-light-blue: #4DD0E1; --neutral-white: #FFFFFF; --neutral-light-gray: #F3F4F6; --neutral-text: #1F2937; --feedback-error: #DC2626; --feedback-success: #16A34A; }
+        body { font-family: 'Inter', sans-serif; }
         .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
         .text-brand-dark-blue { color: var(--brand-dark-blue); }
         .text-brand-teal { color: var(--brand-teal); }
@@ -38,89 +22,46 @@
         .text-feedback-error { color: var(--feedback-error); }
         .bg-feedback-error { background-color: var(--feedback-error); }
         .bg-feedback-success { background-color: var(--feedback-success); }
-
-        /* Custom styles for tooltips and active toggles */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px 12px;
-            position: absolute;
-            z-index: 10;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .toggle-btn-active {
-            background-color: var(--brand-teal);
-            color: white;
-            border-color: var(--brand-teal);
-        }
+        .tooltip { position: relative; display: inline-block; cursor: pointer; }
+        .tooltip .tooltiptext { visibility: hidden; background-color: #333; color: #fff; text-align: center; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 10; bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        .toggle-btn-active { background-color: var(--brand-teal); color: white; border-color: var(--brand-teal); }
     </style>
 </head>
 <body class="bg-neutral-light-gray">
 
-    <!-- Message Box for notifications -->
     <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
 
-    <!-- Main Container -->
     <div class="min-h-screen flex flex-col">
-
-        <!-- Header Navigation -->
         <nav class="bg-brand-dark-blue shadow-lg">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20">
                     <div class="flex-shrink-0">
-                        <img 
-                            src="assets/Paddle Aus Logo.png" 
-                            alt="Paddle Australia Logo" 
-                            class="h-12"
-                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                        <img src="assets/Paddle Aus Logo.png" alt="Paddle Australia Logo" class="h-12" onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
                     </div>
                     <div class="hidden md:block">
                         <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
                     </div>
                     <div>
                         <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Page Content -->
         <main class="flex-grow">
             <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                
-                <!-- Page Header -->
                 <header class="mb-8">
                     <h1 class="text-3xl font-bold text-neutral-text">Competition Results & Career Summary</h1>
                     <p class="mt-2 text-lg text-gray-600">Analyze athlete performance across competitions.</p>
                 </header>
 
-                <!-- Loading State -->
                 <div id="loading-state" class="text-center py-10">
                     <p class="text-lg text-gray-500">Loading data, please wait...</p>
                 </div>
 
-                <!-- Main dashboard (initially hidden) -->
                 <div id="dashboard-content" class="hidden">
-                    <!-- Filter Controls -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 bg-white rounded-lg shadow-md">
                         <div>
                             <label for="class-select" class="block text-sm font-medium text-gray-700 mb-1">Select Class</label>
@@ -136,7 +77,6 @@
                         </div>
                     </div>
 
-                    <!-- Results Display -->
                     <div id="results-container" class="hidden bg-white rounded-lg shadow-md p-6">
                         <h2 id="athlete-name-header" class="text-2xl font-bold mb-4 text-center text-brand-dark-blue"></h2>
                         <div class="overflow-x-auto">
@@ -153,7 +93,6 @@
                             </table>
                         </div>
 
-                        <!-- Chart Container -->
                         <div id="chart-container" class="mt-12 hidden">
                             <h3 class="text-xl font-bold mb-4 text-center text-brand-dark-blue">Performance Over Time</h3>
                             <div class="flex flex-col md:flex-row justify-center items-center gap-4 mb-4">
@@ -178,17 +117,14 @@
             </div>
         </main>
         
-        <!-- Footer -->
         <footer class="bg-white">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
                  &copy;2025 Paddle Australia. All rights reserved.
             </div>
         </footer>
-
     </div>
 
     <script>
-        // --- State Variables ---
         let allData = [];
         let athletesByClass = {};
         let performanceChart = null;
@@ -198,22 +134,30 @@
         let currentClass = '';
         let performanceBands = {};
 
-        // --- DOM Elements ---
-        const dashboardControls = document.getElementById('dashboard-controls');
-        const classSelect = document.getElementById('class-select');
-        const athleteSearch = document.getElementById('athlete-search');
-        const athleteSelect = document.getElementById('athlete-select');
-        const resultsContainer = document.getElementById('results-container');
-        const athleteNameHeader = document.getElementById('athlete-name-header');
-        const resultsBody = document.getElementById('results-body');
-        const metricToggle = document.getElementById('metric-toggle');
-        const phaseFilter = document.getElementById('phase-filter');
-        const resetZoomBtn = document.getElementById('reset-zoom-btn');
+        /**
+         * Converts a CSV string to an array of JSON objects.
+         * @param {string} csvText The raw CSV text.
+         * @returns {Array<Object>} An array of objects.
+         */
+        function csvToJSON(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const result = [];
+            for (let i = 1; i < lines.length; i++) {
+                const obj = {};
+                const currentline = lines[i].split(',');
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = currentline[j] ? currentline[j].trim() : '';
+                }
+                result.push(obj);
+            }
+            return result;
+        }
 
-        // --- Data Fetching ---
         async function loadInitialData() {
-            const resultsFilePath = 'data/competition_results/competition_results.json';
-            const bandsFilePath = 'data/competition_results/performance_bands.json';
+            // *** UPDATED: Now fetching a .csv file for results ***
+            const resultsFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Dashboards/main/data/competition_results/competition_results.csv';
+            const bandsFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Dashboards/main/data/competition_results/performance_bands.json';
             
             try {
                 const [resultsResponse, bandsResponse] = await Promise.all([
@@ -221,13 +165,15 @@
                     fetch(bandsFilePath)
                 ]);
 
-                if (!resultsResponse.ok) throw new Error(`Failed to load competition results: ${resultsResponse.statusText}`);
-                if (!bandsResponse.ok) throw new Error(`Failed to load performance bands: ${bandsResponse.statusText}`);
+                if (!resultsResponse.ok) throw new Error(`Failed to load competition results CSV: ${resultsResponse.statusText}`);
+                if (!bandsResponse.ok) throw new Error(`Failed to load performance bands JSON: ${bandsResponse.statusText}`);
 
-                allData = await resultsResponse.json();
+                // *** UPDATED: Process CSV text instead of JSON ***
+                const resultsCsvText = await resultsResponse.text();
+                allData = csvToJSON(resultsCsvText);
+                
                 const bandArray = await bandsResponse.json();
 
-                // Process performance bands data
                 performanceBands = {};
                 bandArray.forEach(item => {
                     const { Class, BandType, Metric, Lower, Upper } = item;
@@ -238,7 +184,6 @@
                     performanceBands[Class][BandType][Metric] = { lower: lowerValue, upper: upperValue };
                 });
 
-                // Hide loading and show dashboard
                 document.getElementById('loading-state').classList.add('hidden');
                 document.getElementById('dashboard-content').classList.remove('hidden');
                 
@@ -252,7 +197,6 @@
             }
         }
 
-        // --- Data Processing & UI Population ---
         function processData() {
             athletesByClass = {};
             const classes = new Set();
@@ -267,11 +211,15 @@
             });
             populateClassSelect(Array.from(classes).sort());
         }
+
         function populateClassSelect(classes) {
+            const classSelect = document.getElementById('class-select');
             classSelect.innerHTML = '<option value="">-- Select a Class --</option>';
             classes.forEach(c => { const option = document.createElement('option'); option.value = c; option.textContent = c; classSelect.appendChild(option); });
         }
+
         function populateAthleteSelect(className, searchTerm = '') {
+            const athleteSelect = document.getElementById('athlete-select');
             const athletes = Array.from((athletesByClass[className] || new Map()).values()).sort();
             athleteSelect.innerHTML = '<option value="">-- Select an Athlete --</option>';
             const filteredAthletes = athletes.filter(athlete => athlete.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -279,8 +227,9 @@
             athleteSelect.disabled = filteredAthletes.length === 0;
         }
 
-        // --- Analysis and Display ---
         function displayAthleteResults(athleteName, className) {
+            const athleteNameHeader = document.getElementById('athlete-name-header');
+            const resultsBody = document.getElementById('results-body');
             athleteNameHeader.textContent = `Results for ${athleteName} (${className})`;
             resultsBody.innerHTML = ''; 
             const lowerCaseAthleteName = athleteName.toLowerCase();
@@ -316,26 +265,21 @@
             }
             
             renderPerformanceChart();
-            resultsContainer.classList.remove('hidden');
+            document.getElementById('results-container').classList.remove('hidden');
         }
 
-        // --- Chart Rendering ---
         function getCompetitionSortValue(name) {
-            // This function assigns a numeric value to competitions for sorting.
-            if (!name) return 0; // Handle cases where competition name is missing
+            if (!name) return 0;
             const comp = name.toLowerCase();
             if (comp.includes('olympic games')) return 100;
             if (comp.includes('world championships')) return 99;
             if (comp.includes('world cup')) {
-                // If it's a world cup final, give it a high value within the WC range
                 if (comp.includes('final')) return 90;
                 const match = comp.match(/(\d+)/);
-                if (match && match[0]) {
-                    return parseInt(match[0], 10);
-                }
-                return 50; // Default for other world cups
+                if (match && match[0]) return parseInt(match[0], 10);
+                return 50;
             }
-            return 98; // For other/unknown competitions
+            return 98;
         }
 
         function getPhaseSortValue(name) {
@@ -421,47 +365,35 @@
                         legend: { display: false },
                         tooltip: { callbacks: { title: items => items[0].label, label: ctx => `${currentMetric}: ${ctx.parsed.y.toFixed(2)}%` } },
                         performanceBand: { band: bandData },
-                        zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: 'x'
-                            },
-                            zoom: {
-                                drag: {
-                                    enabled: true,
-                                    backgroundColor: 'rgba(0, 151, 167, 0.3)'
-                                },
-                                wheel: {
-                                    enabled: true,
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                mode: 'x',
-                            }
-                        }
+                        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, drag: { enabled: true, backgroundColor: 'rgba(0, 151, 167, 0.3)' }, mode: 'x' } }
                     }
                 }
             });
             document.getElementById('chart-container').classList.remove('hidden');
         }
 
-        // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             loadInitialData();
+            const classSelect = document.getElementById('class-select');
+            const athleteSearch = document.getElementById('athlete-search');
+            const athleteSelect = document.getElementById('athlete-select');
+            const metricToggle = document.getElementById('metric-toggle');
+            const phaseFilter = document.getElementById('phase-filter');
+            const resetZoomBtn = document.getElementById('reset-zoom-btn');
+
             classSelect.addEventListener('change', () => {
                 athleteSearch.value = '';
-                resultsContainer.classList.add('hidden');
+                document.getElementById('results-container').classList.add('hidden');
                 currentClass = classSelect.value;
                 populateAthleteSelect(currentClass);
             });
             athleteSearch.addEventListener('input', () => {
-                resultsContainer.classList.add('hidden');
+                document.getElementById('results-container').classList.add('hidden');
                 populateAthleteSelect(currentClass, athleteSearch.value);
             });
             athleteSelect.addEventListener('change', () => {
                 if (athleteSelect.value && currentClass) displayAthleteResults(athleteSelect.value, currentClass);
-                else resultsContainer.classList.add('hidden');
+                else document.getElementById('results-container').classList.add('hidden');
             });
             metricToggle.addEventListener('click', (e) => handleToggle(e, metricToggle));
             phaseFilter.addEventListener('click', (e) => handleToggle(e, phaseFilter));

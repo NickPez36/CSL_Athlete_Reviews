@@ -42,8 +42,8 @@
                         <h1 class="text-white text-xl font-semibold hidden md:block">Slalom Analytics Portal</h1>
                     </div>
                     <div>
-                        <a href="#" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="#" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                     </div>
                 </div>
             </div>
@@ -91,6 +91,15 @@
                         <div id="analysis-table-container" class="mt-6 overflow-x-auto"></div>
                         <div id="chart-wrapper" class="mt-8">
                             <canvas id="cumulative-chart"></canvas>
+                        </div>
+                        <!-- MODIFICATION: Replaced textarea with a static description box -->
+                        <div id="chart-description-wrapper" class="mt-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Chart Description</h3>
+                            <div class="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-sm text-gray-600">
+                                    This chart displays the selected athlete's cumulative percentage behind the 'Virtual Best' time at each split. The 'Virtual Best' is a theoretical run composed of the fastest individual splits from all competitors. The green shaded area represents the historical performance band required to medal or qualify for this event class and phase. A rising red line indicates where the athlete is losing time relative to the virtual best pace.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

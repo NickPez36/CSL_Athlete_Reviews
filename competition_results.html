@@ -134,11 +134,6 @@
         let currentClass = '';
         let performanceBands = {};
 
-        /**
-         * Converts a CSV string to an array of JSON objects.
-         * @param {string} csvText The raw CSV text.
-         * @returns {Array<Object>} An array of objects.
-         */
         function csvToJSON(csvText) {
             const lines = csvText.trim().split('\n');
             const headers = lines[0].split(',').map(h => h.trim());
@@ -155,9 +150,9 @@
         }
 
         async function loadInitialData() {
-            // *** UPDATED: Now fetching a .csv file for results ***
-            const resultsFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Dashboards/main/data/competition_results/competition_results.csv';
-            const bandsFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Dashboards/main/data/competition_results/performance_bands.json';
+            // *** UPDATED: Pointing to the correct repository name "CSL_Athlete_Reviews" ***
+            const resultsFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/competition_results/competition_results.csv';
+            const bandsFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/competition_results/performance_bands.json';
             
             try {
                 const [resultsResponse, bandsResponse] = await Promise.all([
@@ -168,7 +163,6 @@
                 if (!resultsResponse.ok) throw new Error(`Failed to load competition results CSV: ${resultsResponse.statusText}`);
                 if (!bandsResponse.ok) throw new Error(`Failed to load performance bands JSON: ${bandsResponse.statusText}`);
 
-                // *** UPDATED: Process CSV text instead of JSON ***
                 const resultsCsvText = await resultsResponse.text();
                 allData = csvToJSON(resultsCsvText);
                 

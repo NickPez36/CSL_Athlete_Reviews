@@ -27,7 +27,6 @@
         table th, table td { text-align: center; padding: 12px 15px; }
         .toggle-checkbox:checked { right: 0; border-color: var(--brand-teal); }
         .toggle-checkbox:checked + .toggle-label { background-color: var(--brand-teal); }
-        select:disabled { background-color: #e5e7eb; cursor: not-allowed; }
     </style>
 </head>
 <body class="bg-neutral-light-gray">
@@ -58,21 +57,11 @@
                 </header>
 
                 <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                        <div>
-                            <label for="year-select" class="block text-sm font-medium text-gray-700 mb-1">1. Select Year</label>
-                            <select id="year-select" class="block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm"></select>
-                        </div>
-                        <div>
-                            <label for="competition-select" class="block text-sm font-medium text-gray-700 mb-1">2. Select Competition</label>
-                            <select id="competition-select" class="block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm" disabled></select>
-                        </div>
-                        <div>
-                            <label for="file-select" class="block text-sm font-medium text-gray-700 mb-1">3. Select Race File</label>
-                            <select id="file-select" class="block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm" disabled></select>
-                        </div>
+                    <div class="max-w-xl mx-auto">
+                         <label for="file-select" class="block text-sm font-medium text-gray-700 mb-1">Select a Race File to Analyze</label>
+                         <select id="file-select" class="block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm"></select>
                     </div>
-                    <div id="event-details-container" class="text-center text-gray-600 mt-6 border-t pt-4 hidden">
+                    <div id="event-details-container" class="text-center text-gray-600 mt-4 border-t pt-4 hidden">
                         <span id="competition-name" class="font-semibold text-brand-dark-blue"></span> | 
                         <span id="event-class" class="font-semibold text-brand-dark-blue"></span> | 
                         <span id="event-phase" class="font-semibold text-brand-dark-blue"></span> | 
@@ -103,6 +92,7 @@
                         <div id="chart-wrapper" class="mt-8">
                             <canvas id="cumulative-chart"></canvas>
                         </div>
+                        <!-- MODIFICATION: Replaced textarea with a static description box -->
                         <div id="chart-description-wrapper" class="mt-6">
                             <h3 class="text-lg font-semibold text-gray-800">Chart Description</h3>
                             <div class="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -129,7 +119,6 @@
         let isPercentView = false;
         let cumulativeChart = null;
         let currentEventDetails = {};
-        let allFilesInfo = [];
 
         // --- Performance Band Data ---
         const performanceBands = {
@@ -141,8 +130,6 @@
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', initializeApp);
-        document.getElementById('year-select').addEventListener('change', handleYearSelect);
-        document.getElementById('competition-select').addEventListener('change', handleCompetitionSelect);
         document.getElementById('file-select').addEventListener('change', handleFileSelect);
         document.getElementById('toggle').addEventListener('change', handleToggle);
         document.getElementById('athlete-select').addEventListener('change', handleAnalysisSelection);
@@ -154,90 +141,49 @@
             const githubOwner = 'NickPez36';
             const githubRepo = 'CSL_Athlete_Reviews';
             const apiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/data/splits`;
-            const yearSelect = document.getElementById('year-select');
-            yearSelect.innerHTML = '<option value="">Loading files...</option>';
+            const select = document.getElementById('file-select');
+            select.innerHTML = '<option value="">Loading files...</option>';
 
             try {
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`GitHub API error! Status: ${response.status}.`);
+                if (!response.ok) {
+                    throw new Error(`GitHub API error! Status: ${response.status}. Check username/repo and ensure the repo is public.`);
+                }
                 const files = await response.json();
                 
-                allFilesInfo = files
+                const jsonFiles = files
                     .filter(file => file.type === 'file' && file.name.endsWith('.json'))
-                    .map(file => parseFilename(file.name))
-                    .filter(info => info !== null);
+                    .map(file => file.name);
 
-                if (allFilesInfo.length === 0) throw new Error("No valid .json files found.");
+                if (jsonFiles.length === 0) {
+                     throw new Error("No .json files found in the /data/splits directory.");
+                }
 
-                const years = [...new Set(allFilesInfo.map(info => info.year))].sort((a, b) => b - a);
-                yearSelect.innerHTML = '<option value="">Select Year...</option>';
-                years.forEach(year => {
+                select.innerHTML = '<option value="">Select a Race File...</option>';
+                jsonFiles.forEach(fileName => {
                     const option = document.createElement('option');
-                    option.value = year;
-                    option.textContent = year;
-                    yearSelect.appendChild(option);
+                    option.value = fileName;
+                    option.textContent = fileName.replace('.json', '').replace(/_/g, ' ');
+                    select.appendChild(option);
                 });
 
             } catch (error) {
                 console.error("Initialization Error:", error);
                 showMessage(error.message, true);
-                yearSelect.innerHTML = `<option value="">${error.message}</option>`;
+                select.innerHTML = `<option value="">${error.message}</option>`;
             }
         }
 
-        function handleYearSelect() {
-            const selectedYear = document.getElementById('year-select').value;
-            const competitionSelect = document.getElementById('competition-select');
-            const fileSelect = document.getElementById('file-select');
-            
-            competitionSelect.innerHTML = '<option value="">Select Competition...</option>';
-            fileSelect.innerHTML = '<option value="">Select Race File...</option>';
-            competitionSelect.disabled = true;
-            fileSelect.disabled = true;
-            resetUI();
-
-            if (!selectedYear) return;
-
-            const competitions = [...new Set(allFilesInfo
-                .filter(info => info.year === selectedYear)
-                .map(info => info.competition)
-            )];
-            
-            competitions.forEach(comp => {
-                const option = document.createElement('option');
-                option.value = comp;
-                option.textContent = comp;
-                competitionSelect.appendChild(option);
-            });
-            competitionSelect.disabled = false;
-        }
-
-        function handleCompetitionSelect() {
-            const selectedYear = document.getElementById('year-select').value;
-            const selectedComp = document.getElementById('competition-select').value;
-            const fileSelect = document.getElementById('file-select');
-
-            fileSelect.innerHTML = '<option value="">Select Race File...</option>';
-            fileSelect.disabled = true;
-            resetUI();
-
-            if (!selectedComp) return;
-
-            const files = allFilesInfo.filter(info => info.year === selectedYear && info.competition === selectedComp);
-            
-            files.forEach(info => {
-                const option = document.createElement('option');
-                option.value = info.fileName;
-                option.textContent = `${info.eventClass} ${info.eventPhase}`;
-                fileSelect.appendChild(option);
-            });
-            fileSelect.disabled = false;
-        }
-
+        /**
+         * Main function to handle file selection from the dropdown.
+         */
         async function handleFileSelect() {
             const fileName = document.getElementById('file-select').value;
             if (!fileName) {
-                resetUI();
+                document.getElementById('table-container').innerHTML = '';
+                document.getElementById('analysis-container').classList.add('hidden');
+                document.getElementById('event-details-container').classList.add('hidden');
+                document.getElementById('controls-and-table-wrapper').classList.add('hidden');
                 return;
             }
             
@@ -246,7 +192,9 @@
             try {
                 const fileUrl = `https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/splits/${fileName}`;
                 const response = await fetch(fileUrl);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const rawData = await response.json();
                 
                 const standardData = transformRawData(rawData);
@@ -266,65 +214,93 @@
                 showMessage(`Error loading ${fileName}. Please check the file exists and is valid.`, true);
             }
         }
-        
-        function resetUI() {
-            document.getElementById('table-container').innerHTML = '';
-            document.getElementById('analysis-container').classList.add('hidden');
-            document.getElementById('event-details-container').classList.add('hidden');
-            document.getElementById('controls-and-table-wrapper').classList.add('hidden');
+
+        /**
+         * Transforms the raw, potentially non-standard JSON data into a standard array of objects.
+         */
+        function transformRawData(rawData) {
+            if (!Array.isArray(rawData) || rawData.length === 0) {
+                return [];
+            }
+            const firstItemKeys = Object.keys(rawData[0]);
+            if (firstItemKeys.length > 1 || !firstItemKeys[0].includes(';')) {
+                return rawData; // Already in standard format
+            }
+            return rawData.map(entry => {
+                const keyString = Object.keys(entry)[0];
+                const valueString = entry[keyString];
+                if (typeof keyString !== 'string' || typeof valueString !== 'string') return {};
+                const headers = keyString.split(';');
+                const values = valueString.split(';');
+                const newObject = {};
+                headers.forEach((header, index) => {
+                    newObject[header] = values[index];
+                });
+                return newObject;
+            });
         }
 
-        function parseFilename(fileName) {
+        /**
+         * Parses the filename to extract and display event details.
+         */
+        function parseFilenameForDetails(fileName) {
             const nameWithoutExt = fileName.replace('.json', '');
             const parts = nameWithoutExt.split('_');
-            if (parts.length < 4) return null;
+            
+            if (parts.length < 4) {
+                currentEventDetails = {};
+                document.getElementById('event-details-container').classList.add('hidden');
+                return;
+            }
 
-            const [compCode, eventClass, ...phaseParts] = parts;
+            const [comp, eventClass, ...phaseParts] = parts;
             const year = phaseParts.pop();
             const phase = phaseParts.join(' ');
             
             const compMap = { "WC1": "World Cup 1", "WC2": "World Cup 2", "WC3": "World Cup 3", "WC4": "World Cup 4", "WC5": "World Cup 5", "WCH": "World Championships" };
             const phaseMap = { "FINAL": "Final", "SEMI-FINAL": "Semi-Final", "HEAT 1": "Heat 1" };
 
-            return {
-                fileName: fileName,
-                competitionCode: compCode.toUpperCase(),
-                competition: compMap[compCode.toUpperCase()] || compCode,
+            currentEventDetails = {
+                competition: compMap[comp.toUpperCase()] || comp,
                 eventClass: eventClass,
                 eventPhase: phaseMap[phase.toUpperCase()] || phase,
                 year: year
             };
-        }
 
-        function parseFilenameForDetails(fileName) {
-            currentEventDetails = allFilesInfo.find(info => info.fileName === fileName);
-            if (currentEventDetails) {
-                document.getElementById('competition-name').textContent = currentEventDetails.competition;
-                document.getElementById('event-class').textContent = currentEventDetails.eventClass;
-                document.getElementById('event-phase').textContent = currentEventDetails.eventPhase;
-                document.getElementById('event-year').textContent = currentEventDetails.year;
-                document.getElementById('event-details-container').classList.remove('hidden');
-            }
+            document.getElementById('competition-name').textContent = currentEventDetails.competition;
+            document.getElementById('event-class').textContent = currentEventDetails.eventClass;
+            document.getElementById('event-phase').textContent = currentEventDetails.eventPhase;
+            document.getElementById('event-year').textContent = currentEventDetails.year;
+            document.getElementById('event-details-container').classList.remove('hidden');
         }
         
+        /**
+         * Main handler for when an athlete is selected from the dropdown.
+         */
         function handleAnalysisSelection() {
             displayAnalysisTable();
             displayCumulativeChart();
         }
 
+        /**
+         * Populates the athlete selection dropdown menu.
+         */
         function populateAthleteDropdown() {
             const select = document.getElementById('athlete-select');
             select.innerHTML = ''; 
+
             const defaultOption = document.createElement('option');
             defaultOption.textContent = 'Select an Athlete...';
             defaultOption.value = '';
             select.appendChild(defaultOption);
+
             originalProcessedData.rows.forEach(row => {
                 const option = document.createElement('option');
                 option.textContent = row.Name;
                 option.value = row.Name;
                 select.appendChild(option);
             });
+            
             document.getElementById('analysis-table-container').innerHTML = '';
             if (cumulativeChart) {
                 cumulativeChart.destroy();
@@ -332,19 +308,27 @@
             }
         }
 
+        /**
+         * Displays the detailed analysis table for the selected athlete.
+         */
         function displayAnalysisTable() {
             const selectedAthleteName = document.getElementById('athlete-select').value;
             const container = document.getElementById('analysis-table-container');
+
             if (!selectedAthleteName) {
                 container.innerHTML = '';
                 return;
             }
+
             const virtualBestRow = calculateVirtualBest();
             const selectedAthleteRow = originalProcessedData.rows.find(row => row.Name === selectedAthleteName);
+            
             const headers = originalProcessedData.headers;
             const tableData = [virtualBestRow, selectedAthleteRow];
+
             const table = document.createElement('table');
             table.className = 'min-w-full divide-y divide-gray-200';
+            
             const thead = document.createElement('thead');
             thead.className = 'bg-gray-50';
             const headerRow = document.createElement('tr');
@@ -356,6 +340,7 @@
             });
             thead.appendChild(headerRow);
             table.appendChild(thead);
+
             const tbody = document.createElement('tbody');
             tbody.className = 'bg-white divide-y divide-gray-200';
             tableData.forEach(rowData => {
@@ -374,68 +359,154 @@
                 tbody.appendChild(tr);
             });
             table.appendChild(tbody);
+
             container.innerHTML = '';
             container.appendChild(table);
         }
 
+        /**
+         * Processes standardized data by filtering, renaming, and removing zero-total athletes.
+         */
+        function processTableData(data) {
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                return { headers: [], rows: [] };
+            }
+            
+            const columnsToExclude = ["P", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"];
+            const columnRenames = {
+                "S1": "Split 1", "S2": "Split 2", "S3": "Split 3",
+                "S4": "Split 4", "S5": "Split 5", "S6": "Split 6",
+                "S7": "Split 7", "S8": "Split 8"
+            };
+            
+            const originalHeaders = Object.keys(data[0]);
+            const headers = originalHeaders.filter(h => !columnsToExclude.includes(h)).map(h => columnRenames[h] || h);
+            
+            const rows = data
+                .map(row => { 
+                    const newRow = {}; 
+                    for (const key in row) { 
+                        if (columnsToExclude.includes(key)) continue; 
+                        const newKey = columnRenames[key] || key; 
+                        let value = row[key]; 
+                        if (key === "Phase" && value === "FL") { value = "Final"; } 
+                        else if (key === "Phase" && value === "H1") { value = "Heat 1"; }
+                        else if (key === "Phase" && value === "SF") { value = "Semi-Final"; }
+                        newRow[newKey] = value; 
+                    } 
+                    return newRow; 
+                })
+                .filter(row => row.Total && parseFloat(row.Total) > 0);
+
+            return { headers, rows };
+        }
+
+        /**
+         * Displays the cumulative percentage difference chart with performance bands.
+         */
         function displayCumulativeChart() {
             const selectedAthleteName = document.getElementById('athlete-select').value;
             const ctx = document.getElementById('cumulative-chart').getContext('2d');
+
             if (cumulativeChart) {
                 cumulativeChart.destroy();
                 cumulativeChart = null;
             }
+
             if (!selectedAthleteName) return;
+
             const virtualBestRow = calculateVirtualBest();
             const selectedAthleteRow = originalProcessedData.rows.find(row => row.Name === selectedAthleteName);
+
             const virtualBestCumulative = calculateCumulativeData(virtualBestRow);
             const athleteCumulative = calculateCumulativeData(selectedAthleteRow);
+            
             const percentDifferenceData = calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative);
             const splitLabels = originalProcessedData.headers.filter(h => h.startsWith('Split'));
-            const datasets = [{ label: 'Cumulative % Behind Virtual Best', data: percentDifferenceData, borderColor: 'var(--brand-teal)', backgroundColor: 'rgba(0, 151, 167, 0.5)', tension: 0.1, spanGaps: false, order: 0 }];
+            
+            const datasets = [{
+                label: 'Cumulative % Behind Virtual Best',
+                data: percentDifferenceData,
+                borderColor: 'var(--brand-teal)',
+                backgroundColor: 'rgba(0, 151, 167, 0.5)',
+                tension: 0.1,
+                spanGaps: false,
+                order: 0 
+            }];
+
             if (currentEventDetails.eventClass && currentEventDetails.eventPhase && performanceBands[currentEventDetails.eventClass]?.[currentEventDetails.eventPhase]) {
                 const bands = performanceBands[currentEventDetails.eventClass][currentEventDetails.eventPhase];
                 const lowerBand = splitLabels.map(label => (bands.lower[label] || 100) - 100);
                 const upperBand = splitLabels.map(label => (bands.upper[label] || 100) - 100);
-                datasets.push({ label: 'Lower Performance Band', data: lowerBand, backgroundColor: 'rgba(74, 222, 128, 0.2)', borderColor: 'transparent', pointRadius: 0, fill: '+1', order: 1 });
-                datasets.push({ label: 'Upper Performance Band', data: upperBand, backgroundColor: 'rgba(74, 222, 128, 0.2)', borderColor: 'transparent', pointRadius: 0, order: 2 });
+                
+                datasets.push({
+                    label: 'Lower Performance Band',
+                    data: lowerBand,
+                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                    borderColor: 'transparent',
+                    pointRadius: 0,
+                    fill: '+1',
+                    order: 1
+                });
+                datasets.push({
+                    label: 'Upper Performance Band',
+                    data: upperBand,
+                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                    borderColor: 'transparent',
+                    pointRadius: 0,
+                    order: 2
+                });
             }
+
             const paddedLabels = ['', ...splitLabels, ''];
-            datasets.forEach(ds => { ds.data = [null, ...ds.data, null]; });
-            cumulativeChart = new Chart(ctx, { type: 'line', data: { labels: paddedLabels, datasets: datasets }, options: { responsive: true, plugins: { legend: { labels: { filter: item => item.datasetIndex === 0 } }, title: { display: true, text: `Cumulative % Behind Virtual Best for ${selectedAthleteName}` }, tooltip: { callbacks: { label: function(context) { if (context.datasetIndex > 0) return null; let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y.toFixed(2) + '%'; return label; } } } }, scales: { x: { title: { display: true, text: 'Split' } }, y: { min: 0, title: { display: true, text: 'Cumulative % Behind' }, ticks: { callback: value => value + '%' } } } } });
+            datasets.forEach(ds => {
+                ds.data = [null, ...ds.data, null];
+            });
+
+            cumulativeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: paddedLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { filter: item => item.datasetIndex === 0 } },
+                        title: { display: true, text: `Cumulative % Behind Virtual Best for ${selectedAthleteName}` },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex > 0) return null;
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y.toFixed(2) + '%';
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Split' } },
+                        y: { min: 0, title: { display: true, text: 'Cumulative % Behind' }, ticks: { callback: value => value + '%' } }
+                    }
+                }
+            });
         }
+        
+        // --- Functions from previous steps (unchanged unless necessary) ---
         
         function calculateVirtualBest() { const { headers, rows } = originalProcessedData; const virtualBest = { Name: 'Virtual Best', Phase: '-' }; let virtualTotal = 0; headers.forEach(header => { if (header.startsWith('Split')) { let bestSplit = Infinity; rows.forEach(row => { const splitValue = parseFloat(row[header]); if (!isNaN(splitValue) && splitValue > 0 && splitValue < bestSplit) { bestSplit = splitValue; } }); virtualBest[header] = bestSplit === Infinity ? 0 : bestSplit; virtualTotal += virtualBest[header]; } }); virtualBest['Total'] = virtualTotal; return virtualBest; }
         function calculateCumulativeData(rowData) { const cumulativeTimes = []; let currentTotal = 0; let missedSplit = false; const splitHeaders = originalProcessedData.headers.filter(h => h.startsWith('Split')); for (const header of splitHeaders) { if (missedSplit) { cumulativeTimes.push(null); continue; } const splitValue = parseFloat(rowData[header]); if (!isNaN(splitValue) && splitValue > 0) { currentTotal += splitValue; cumulativeTimes.push(currentTotal); } else { missedSplit = true; cumulativeTimes.push(null); } } return cumulativeTimes; }
         function calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative) { const percentDifference = []; for (let i = 0; i < athleteCumulative.length; i++) { const athleteTime = athleteCumulative[i]; const bestTime = virtualBestCumulative[i]; if (bestTime === null || athleteTime === null || bestTime === 0) { percentDifference.push(null); } else { const difference = ((athleteTime - bestTime) / bestTime) * 100; percentDifference.push(difference); } } return percentDifference; }
         function handleToggle() { isPercentView = document.getElementById('toggle').checked; displayTable(); }
-        function processTableData(data) {
-            if (!data || !Array.isArray(data) || data.length === 0) {
-                return { headers: [], rows: [] };
-            }
-            const columnsToExclude = ["P", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"];
-            const columnRenames = { "S1": "Split 1", "S2": "Split 2", "S3": "Split 3", "S4": "Split 4", "S5": "Split 5", "S6": "Split 6", "S7": "Split 7", "S8": "Split 8" };
-            const originalHeaders = Object.keys(data[0]);
-            const headers = originalHeaders.filter(h => !columnsToExclude.includes(h)).map(h => columnRenames[h] || h);
-            const rows = data.map(row => {
-                const newRow = {};
-                for (const key in row) {
-                    if (columnsToExclude.includes(key)) continue;
-                    const newKey = columnRenames[key] || key;
-                    let value = row[key];
-                    if (key === "Phase" && value === "FL") { value = "Final"; }
-                    else if (key === "Phase" && value === "H1") { value = "Heat 1"; }
-                    else if (key === "Phase" && value === "SF") { value = "Semi-Final"; }
-                    newRow[newKey] = value;
-                }
-                return newRow;
-            }).filter(row => row.Total && parseFloat(row.Total) > 0);
-            return { headers, rows };
-        }
+        
         function displayTable() { if (!originalProcessedData) return; const dataToDisplay = isPercentView ? calculatePercentageData() : originalProcessedData; const { headers, rows } = dataToDisplay; const container = document.getElementById('table-container'); if (headers.length === 0 || rows.length === 0) { container.innerHTML = '<p class="text-center p-8 text-gray-500">No data to display.</p>'; return; } const table = document.createElement('table'); table.className = 'min-w-full divide-y divide-gray-200'; const thead = document.createElement('thead'); thead.className = 'bg-gray-50'; const headerRow = document.createElement('tr'); headers.forEach(headerText => { const th = document.createElement('th'); th.scope = 'col'; th.className = 'px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'; th.textContent = headerText; headerRow.appendChild(th); }); thead.appendChild(headerRow); table.appendChild(thead); const tbody = document.createElement('tbody'); tbody.className = 'bg-white divide-y divide-gray-200'; rows.forEach(rowData => { const tr = document.createElement('tr'); headers.forEach(header => { const td = document.createElement('td'); td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700'; let value = rowData[header]; if (!isPercentView) { const numValue = parseFloat(value); if (!isNaN(numValue)) { value = numValue.toFixed(2); } } td.textContent = value; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); container.innerHTML = ''; container.appendChild(table); highlightTopValues(table, headers); }
         function calculatePercentageData() { const { headers, rows } = originalProcessedData; const newRows = JSON.parse(JSON.stringify(rows)); const splitHeaders = headers.filter(h => h.startsWith('Split')); headers.forEach(header => { const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); if (!isTimeMetric) return; let bestValue = Infinity; rows.forEach(row => { const value = parseFloat(row[header]); if (isNaN(value) || value <= 0) return; if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(row[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) return; } if (value < bestValue) { bestValue = value; } }); if (bestValue === Infinity) return; newRows.forEach((row, rowIndex) => { const originalRow = rows[rowIndex]; const value = parseFloat(originalRow[header]); if (isNaN(value)) return; if (value === 0) { row[header] = 'N/A'; return; } if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) { row[header] = '-'; return; } } if (value === bestValue) { row[header] = 'Fastest'; } else { const percentage = ((value - bestValue) / bestValue) * 100; row[header] = `+${percentage.toFixed(2)}%`; } }); }); return { headers, rows: newRows }; }
         function highlightTopValues(table, headers) { const tbody = table.querySelector('tbody'); if (!tbody) return; headers.forEach((header, colIndex) => { const values = []; for (let i = 0; i < tbody.rows.length; i++) { const cell = tbody.rows[i].cells[colIndex]; const rawValue = cell.textContent; let numericValue; if (isPercentView) { if (rawValue === 'Fastest') numericValue = 0; else if (rawValue === 'N/A' || rawValue === '-') continue; else numericValue = parseFloat(rawValue.replace('+', '').replace('%', '')); } else { numericValue = parseFloat(rawValue); } if (isNaN(numericValue)) { continue; } if (!isPercentView && numericValue === 0) { continue; } if (header === 'Total') { let hasZeroSplit = false; const originalRow = originalProcessedData.rows[i]; for (const splitHeader of originalProcessedData.headers.filter(h => h.startsWith('Split'))) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) continue; } values.push({ value: numericValue, rowIndex: i }); } if (values.length < 1) return; const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); values.sort((a, b) => isTimeMetric ? a.value - b.value : b.value - a.value); const topValues = values.slice(0, 3); if (topValues[0]) { tbody.rows[topValues[0].rowIndex].cells[colIndex].classList.add('gold'); } if (topValues[1]) { tbody.rows[topValues[1].rowIndex].cells[colIndex].classList.add('silver'); } if (topValues[2]) { tbody.rows[topValues[2].rowIndex].cells[colIndex].classList.add('bronze'); } }); }
         
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
         function showMessage(message, isError = true) {
             const box = document.getElementById('message-box');
             box.textContent = message;

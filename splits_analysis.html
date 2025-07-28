@@ -120,7 +120,6 @@
         };
 
         async function initializeApp() {
-            // *** FIX: Using correct GitHub username and repository name ***
             const githubOwner = 'NickPez36';
             const githubRepo = 'CSL_Athlete_Reviews';
             
@@ -171,7 +170,6 @@
             parseFilenameForDetails(fileName);
 
             try {
-                // *** FIX: Using absolute URL to raw GitHub content with correct repo name ***
                 const fileUrl = `https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/splits/${fileName}`;
                 const response = await fetch(fileUrl);
                 if (!response.ok) {
@@ -179,8 +177,8 @@
                 }
                 const rawData = await response.json();
 
-                const standardData = normalizeData(rawData);
-                originalProcessedData = processTableData(standardData);
+                // *** FIX: Simplified data processing and added more robust checks ***
+                originalProcessedData = processTableData(rawData);
                 
                 isPercentView = false;
                 document.getElementById('toggle').checked = false;
@@ -403,9 +401,36 @@
         function calculateCumulativeData(rowData) { const cumulativeTimes = []; let currentTotal = 0; let missedSplit = false; const splitHeaders = originalProcessedData.headers.filter(h => h.startsWith('Split')); for (const header of splitHeaders) { if (missedSplit) { cumulativeTimes.push(null); continue; } const splitValue = parseFloat(rowData[header]); if (!isNaN(splitValue) && splitValue > 0) { currentTotal += splitValue; cumulativeTimes.push(currentTotal); } else { missedSplit = true; cumulativeTimes.push(null); } } return cumulativeTimes; }
         function calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative) { const percentDifference = []; for (let i = 0; i < athleteCumulative.length; i++) { const athleteTime = athleteCumulative[i]; const bestTime = virtualBestCumulative[i]; if (bestTime === null || athleteTime === null || bestTime === 0) { percentDifference.push(null); } else { const difference = ((athleteTime - bestTime) / bestTime) * 100; percentDifference.push(difference); } } return percentDifference; }
         function handleToggle() { isPercentView = document.getElementById('toggle').checked; displayTable(); }
-        function normalizeData(data) { if (!Array.isArray(data) || data.length === 0) return []; if (Object.keys(data[0])[0].includes(';')) { return parseAndTransformData(data); } return data; }
-        function parseAndTransformData(rawData) { return rawData.map(entry => { const keyString = Object.keys(entry)[0]; const valueString = entry[keyString]; if (typeof keyString !== 'string' || typeof valueString !== 'string') return {}; const headers = keyString.split(';'); const values = valueString.split(';'); const newObject = {}; headers.forEach((header, index) => { newObject[header] = values[index]; }); return newObject; }); }
-        function processTableData(data) { if (!data || !Array.isArray(data) || data.length === 0) { return { headers: [], rows: [] }; } const columnsToExclude = ["P", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"]; const columnRenames = { "S1": "Split 1", "S2": "Split 2", "S3": "Split 3", "S4": "Split 4", "S5": "Split 5", "S6": "Split 6", "S7": "Split 7", "S8": "Split 8" }; const originalHeaders = Object.keys(data[0]); const headers = originalHeaders.filter(h => !columnsToExclude.includes(h)).map(h => columnRenames[h] || h); const rows = data.map(row => { const newRow = {}; for (const key in row) { if (columnsToExclude.includes(key)) continue; const newKey = columnRenames[key] || key; let value = row[key]; if (key === "Phase" && value === "FL") { value = "Final"; } else if (key === "Phase" && value === "H1") { value = "Heat 1"; } else if (key === "Phase" && value === "SF") { value = "Semi-Final"; } newRow[newKey] = value; } return newRow; }).filter(row => { if (row.Total) { return parseFloat(row.Total) > 0; } return true; }); return { headers, rows }; }
+        
+        // *** FIX: More robust data processing function ***
+        function processTableData(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                return { headers: [], rows: [] };
+            }
+            const columnsToExclude = ["P", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"];
+            const columnRenames = { "S1": "Split 1", "S2": "Split 2", "S3": "Split 3", "S4": "Split 4", "S5": "Split 5", "S6": "Split 6", "S7": "Split 7", "S8": "Split 8" };
+            const originalHeaders = Object.keys(data[0]);
+            const headers = originalHeaders
+                .filter(h => !columnsToExclude.includes(h))
+                .map(h => columnRenames[h] || h);
+            
+            const rows = data.map(row => {
+                const newRow = {};
+                for (const key in row) {
+                    if (columnsToExclude.includes(key)) continue;
+                    const newKey = columnRenames[key] || key;
+                    let value = row[key];
+                    if (key === "Phase" && value === "FL") { value = "Final"; }
+                    else if (key === "Phase" && value === "H1") { value = "Heat 1"; }
+                    else if (key === "Phase" && value === "SF") { value = "Semi-Final"; }
+                    newRow[newKey] = value;
+                }
+                return newRow;
+            }).filter(row => row.Total && parseFloat(row.Total) > 0);
+
+            return { headers, rows };
+        }
+
         function displayTable() { if (!originalProcessedData) return; const dataToDisplay = isPercentView ? calculatePercentageData() : originalProcessedData; const { headers, rows } = dataToDisplay; const container = document.getElementById('table-container'); if (headers.length === 0 || rows.length === 0) { container.innerHTML = '<p class="text-center p-8 text-gray-500">No data to display.</p>'; return; } const table = document.createElement('table'); table.className = 'min-w-full divide-y divide-gray-200'; const thead = document.createElement('thead'); thead.className = 'bg-gray-50'; const headerRow = document.createElement('tr'); headers.forEach(headerText => { const th = document.createElement('th'); th.scope = 'col'; th.className = 'px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'; th.textContent = headerText; headerRow.appendChild(th); }); thead.appendChild(headerRow); table.appendChild(thead); const tbody = document.createElement('tbody'); tbody.className = 'bg-white divide-y divide-gray-200'; rows.forEach(rowData => { const tr = document.createElement('tr'); headers.forEach(header => { const td = document.createElement('td'); td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700'; let value = rowData[header]; if (!isPercentView) { const numValue = parseFloat(value); if (!isNaN(numValue)) { value = numValue.toFixed(2); } } td.textContent = value; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); container.innerHTML = ''; container.appendChild(table); highlightTopValues(table, headers); }
         function calculatePercentageData() { const { headers, rows } = originalProcessedData; const newRows = JSON.parse(JSON.stringify(rows)); const splitHeaders = headers.filter(h => h.startsWith('Split')); headers.forEach(header => { const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); if (!isTimeMetric) return; let bestValue = Infinity; rows.forEach(row => { const value = parseFloat(row[header]); if (isNaN(value) || value <= 0) return; if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(row[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) return; } if (value < bestValue) { bestValue = value; } }); if (bestValue === Infinity) return; newRows.forEach((row, rowIndex) => { const originalRow = rows[rowIndex]; const value = parseFloat(originalRow[header]); if (isNaN(value)) return; if (value === 0) { row[header] = 'N/A'; return; } if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) { row[header] = '-'; return; } } if (value === bestValue) { row[header] = 'Fastest'; } else { const percentage = ((value - bestValue) / bestValue) * 100; row[header] = `+${percentage.toFixed(2)}%`; } }); }); return { headers, rows: newRows }; }
         function highlightTopValues(table, headers) { const tbody = table.querySelector('tbody'); if (!tbody) return; headers.forEach((header, colIndex) => { const values = []; for (let i = 0; i < tbody.rows.length; i++) { const cell = tbody.rows[i].cells[colIndex]; const rawValue = cell.textContent; let numericValue; if (isPercentView) { if (rawValue === 'Fastest') numericValue = 0; else if (rawValue === 'N/A' || rawValue === '-') continue; else numericValue = parseFloat(rawValue.replace('+', '').replace('%', '')); } else { numericValue = parseFloat(rawValue); } if (isNaN(numericValue)) { continue; } if (!isPercentView && numericValue === 0) { continue; } if (header === 'Total') { let hasZeroSplit = false; const originalRow = originalProcessedData.rows[i]; for (const splitHeader of originalProcessedData.headers.filter(h => h.startsWith('Split'))) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) continue; } values.push({ value: numericValue, rowIndex: i }); } if (values.length < 1) return; const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); values.sort((a, b) => isTimeMetric ? a.value - b.value : b.value - a.value); const topValues = values.slice(0, 3); if (topValues[0]) { tbody.rows[topValues[0].rowIndex].cells[colIndex].classList.add('gold'); } if (topValues[1]) { tbody.rows[topValues[1].rowIndex].cells[colIndex].classList.add('silver'); } if (topValues[2]) { tbody.rows[topValues[2].rowIndex].cells[colIndex].classList.add('bronze'); } }); }

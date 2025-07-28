@@ -8,24 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Set the custom font for the page */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        /* Define the color palette as CSS Variables for easy use */
-        :root {
-            --brand-dark-blue: #0A2B4C;
-            --brand-teal: #0097A7;
-            --brand-light-blue: #4DD0E1;
-            --neutral-white: #FFFFFF;
-            --neutral-light-gray: #F3F4F6;
-            --neutral-text: #1F2937;
-            --feedback-error: #DC2626;
-            --feedback-success: #16A34A;
-        }
-
-        /* Apply custom colors using the variables */
+        :root { --brand-dark-blue: #0A2B4C; --brand-teal: #0097A7; --brand-light-blue: #4DD0E1; --neutral-white: #FFFFFF; --neutral-light-gray: #F3F4F6; --neutral-text: #1F2937; --feedback-error: #DC2626; --feedback-success: #16A34A; }
+        body { font-family: 'Inter', sans-serif; }
         .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
         .text-brand-dark-blue { color: var(--brand-dark-blue); }
         .text-brand-teal { color: var(--brand-teal); }
@@ -37,71 +21,48 @@
         .text-feedback-error { color: var(--feedback-error); }
         .bg-feedback-error { background-color: var(--feedback-error); }
         .bg-feedback-success { background-color: var(--feedback-success); }
-        
-        /* Custom styles */
         .gold { background-color: #FFD700; color: #000; font-weight: bold; }
         .silver { background-color: #C0C0C0; color: #000; font-weight: bold; }
         .bronze { background-color: #CD7F32; color: #fff; font-weight: bold; }
-        table th, table td {
-            text-align: center;
-            padding: 12px 15px;
-        }
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: var(--brand-teal);
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: var(--brand-teal);
-        }
+        table th, table td { text-align: center; padding: 12px 15px; }
+        .toggle-checkbox:checked { right: 0; border-color: var(--brand-teal); }
+        .toggle-checkbox:checked + .toggle-label { background-color: var(--brand-teal); }
     </style>
 </head>
 <body class="bg-neutral-light-gray">
 
-    <!-- Message Box for notifications -->
     <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
 
-    <!-- Main Container -->
     <div class="min-h-screen flex flex-col">
-
-        <!-- Header Navigation -->
         <nav class="bg-brand-dark-blue shadow-lg">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20">
                     <div class="flex-shrink-0">
-                        <img 
-                            src="assets/Paddle Aus Logo.png" 
-                            alt="Paddle Australia Logo" 
-                            class="h-12"
-                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                        <img src="assets/Paddle Aus Logo.png" alt="Paddle Australia Logo" class="h-12" onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
                     </div>
                     <div class="hidden md:block">
                         <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
                     </div>
                     <div>
                         <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Page Content -->
         <main class="flex-grow">
             <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                
-                <!-- Page Header -->
                 <header class="mb-8">
                     <h1 class="text-3xl font-bold text-neutral-text">Splits Report & Analysis</h1>
                     <p class="mt-2 text-lg text-gray-600">Select a race file to analyze detailed split data.</p>
                 </header>
 
                 <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
-                    <!-- File Selection Dropdown -->
                     <div class="max-w-xl mx-auto">
                          <label for="file-select" class="block text-sm font-medium text-gray-700 mb-1">Select a Race File to Analyze</label>
                          <select id="file-select" class="block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm"></select>
                     </div>
-                     <!-- Event Details Display -->
                     <div id="event-details-container" class="text-center text-gray-600 mt-4 border-t pt-4 hidden">
                         <span id="competition-name" class="font-semibold text-brand-dark-blue"></span> | 
                         <span id="event-class" class="font-semibold text-brand-dark-blue"></span> | 
@@ -111,7 +72,6 @@
                 </div>
 
                 <div id="controls-and-table-wrapper" class="hidden">
-                    <!-- Toggle Switch -->
                     <div id="toggle-container" class="flex items-center justify-center space-x-4 mb-8">
                          <span class="text-sm font-medium text-gray-900">Show Raw Values</span>
                         <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
@@ -120,11 +80,9 @@
                         </div>
                         <span class="text-sm font-medium text-gray-900">Show % Behind Fastest</span>
                     </div>
-
                     <div id="table-container" class="bg-white rounded-xl shadow-lg overflow-x-auto"></div>
                 </div>
 
-                <!-- Detailed Analysis Section -->
                 <div id="analysis-container" class="mt-12 hidden">
                     <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
                         <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Detailed Athlete Analysis</h2>
@@ -133,7 +91,6 @@
                             <select id="athlete-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-brand-teal focus:border-brand-teal sm:text-sm rounded-md shadow-sm"></select>
                         </div>
                         <div id="analysis-table-container" class="mt-6 overflow-x-auto"></div>
-                        <!-- Chart Container -->
                         <div id="chart-wrapper" class="mt-8">
                             <canvas id="cumulative-chart"></canvas>
                         </div>
@@ -142,23 +99,19 @@
             </div>
         </main>
         
-        <!-- Footer -->
         <footer class="bg-white">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
                  &copy;2025 Paddle Australia. All rights reserved.
             </div>
         </footer>
-
     </div>
 
     <script>
-        // --- Global State ---
         let originalProcessedData = null;
         let isPercentView = false;
         let cumulativeChart = null;
         let currentEventDetails = {};
 
-        // --- Performance Band Data ---
         const performanceBands = {
           "K1M": { "Final": { "description": "Performance band to medal in a K1M Final", "upper": { "Split 1": 108.75, "Split 2": 107.53, "Split 3": 107.58, "Split 4": 106.78, "Split 5": 106.41, "Split 6": 106.96 }, "lower": { "Split 1": 102.28, "Split 2": 102.33, "Split 3": 103.2, "Split 4": 104.22, "Split 5": 104.4, "Split 6": 106.96 } }, "Heat 1": { "description": "Performance band to qualify from K1M Heat 1", "upper": { "Split 1": 108.59, "Split 2": 109.49, "Split 3": 109.3, "Split 4": 109.13, "Split 5": 108.59, "Split 6":108.89 }, "lower": { "Split 1": 102.85, "Split 2": 104.14, "Split 3": 105.76, "Split 4": 105.68, "Split 5": 106.07, "Split 6": 106.63 } }, "Semi-Final": { "description": "Performance band to qualify from K1M Semi-Final", "upper": { "Split 1": 108.6, "Split 2": 109.5, "Split 3": 109.4, "Split 4": 109.2, "Split 5": 108.6, "Split 6":108.9 }, "lower": { "Split 1": 102.9, "Split 2": 104.2, "Split 3": 105.8, "Split 4": 105.7, "Split 5": 106.1, "Split 6": 106.7 } } },
           "K1W": { "Final": { "description": "Performance band to medal in a K1W Final", "upper": { "Split 1": 105.82, "Split 2": 105.94, "Split 3": 104.83, "Split 4": 104.92, "Split 5": 106.01, "Split 6": 106.74 }, "lower": { "Split 1": 100.17, "Split 2": 102.55, "Split 3": 104.22, "Split 4": 103.84, "Split 5": 104.53, "Split 6": 104.93 } }, "Heat 1": { "description": "Performance band to qualify from K1W Heat 1", "upper": { "Split 1": 113.49, "Split 2": 111.91, "Split 3": 110.79, "Split 4": 110.83, "Split 5": 111.48, "Split 6": 110.4 }, "lower": { "Split 1": 104.88, "Split 2": 105.55, "Split 3": 107.75, "Split 4": 108.42, "Split 5": 107.52, "Split 6": 109.06 } }, "Semi-Final": { "description": "Performance band to qualify from K1W Semi-Final", "upper": { "Split 1": 113.5, "Split 2": 112.0, "Split 3": 110.8, "Split 4": 110.9, "Split 5": 111.5, "Split 6": 110.5 }, "lower": { "Split 1": 104.9, "Split 2": 105.6, "Split 3": 107.8, "Split 4": 108.5, "Split 5": 107.6, "Split 6": 109.1 } } },
@@ -166,18 +119,8 @@
           "C1W": { "Final": { "description": "Performance band to medal in a C1W Final", "upper": { "Split 1": 112.1, "Split 2": 111.26, "Split 3": 107.73, "Split 4": 107.1, "Split 5": 107.21, "Split 6": 113.14 }, "lower": { "Split 1": 102.64, "Split 2": 102.49, "Split 3": 104.55, "Split 4": 105.24, "Split 5": 104.65, "Split 6": 107.68 } }, "Heat 1": { "description": "Performance band to qualify from C1W Heat 1", "upper": { "Split 1": 116.57, "Split 2": 119.03, "Split 3": 118.38, "Split 4": 117.97, "Split 5": 117.24, "Split 6": 117.14 }, "lower": { "Split 1": 111.11, "Split 2": 112.26, "Split 3": 112.49, "Split 4": 112.26, "Split 5": 111.77, "Split 6": 111.97 } }, "Semi-Final": { "description": "Performance band to qualify from C1W Semi-Final", "upper": { "Split 1": 116.6, "Split 2": 119.1, "Split 3": 118.4, "Split 4": 118.0, "Split 5": 117.3, "Split 6": 117.2 }, "lower": { "Split 1": 111.2, "Split 2": 112.3, "Split 3": 112.5, "Split 4": 112.3, "Split 5": 111.8, "Split 6": 112.0 } } }
         };
 
-        // --- Event Listeners ---
-        document.addEventListener('DOMContentLoaded', initializeApp);
-        document.getElementById('file-select').addEventListener('change', handleFileSelect);
-        document.getElementById('toggle').addEventListener('change', handleToggle);
-        document.getElementById('athlete-select').addEventListener('change', handleAnalysisSelection);
-
-        /**
-         * Initializes the application by fetching the list of files from the GitHub repo
-         * and populating the file dropdown.
-         */
         async function initializeApp() {
-            // IMPORTANT: Replace with your GitHub username and repository name.
+            // *** FIX: Using correct GitHub username and repository name ***
             const githubOwner = 'NickPez36';
             const githubRepo = 'CSL_Athlete_Reviews';
             
@@ -186,11 +129,6 @@
             select.innerHTML = '<option value="">Loading files...</option>';
 
             try {
-                // Check if placeholder values have been changed
-                if (githubOwner === 'NickPez36' || githubRepo === 'CSL_Athlete_Reviews') {
-                    throw new Error("Please update the GitHub owner and repository name in the script.");
-                }
-
                 const response = await fetch(apiUrl);
                 if (!response.ok) {
                     throw new Error(`GitHub API error! Status: ${response.status}. Check username/repo and ensure the repo is public.`);
@@ -220,9 +158,6 @@
             }
         }
 
-        /**
-         * Main function to handle file selection from the dropdown.
-         */
         async function handleFileSelect() {
             const fileName = document.getElementById('file-select').value;
             if (!fileName) {
@@ -236,7 +171,9 @@
             parseFilenameForDetails(fileName);
 
             try {
-                const response = await fetch(`data/splits/${fileName}`);
+                // *** FIX: Using absolute URL to raw GitHub content with correct repo name ***
+                const fileUrl = `https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/splits/${fileName}`;
+                const response = await fetch(fileUrl);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -260,9 +197,6 @@
             }
         }
 
-        /**
-         * Parses the filename to extract and display event details.
-         */
         function parseFilenameForDetails(fileName) {
             const nameWithoutExt = fileName.replace('.json', '');
             const parts = nameWithoutExt.split('_');
@@ -294,17 +228,11 @@
             document.getElementById('event-details-container').classList.remove('hidden');
         }
         
-        /**
-         * Main handler for when an athlete is selected from the dropdown.
-         */
         function handleAnalysisSelection() {
             displayAnalysisTable();
             displayCumulativeChart();
         }
 
-        /**
-         * Populates the athlete selection dropdown menu.
-         */
         function populateAthleteDropdown() {
             const select = document.getElementById('athlete-select');
             select.innerHTML = ''; 
@@ -328,9 +256,6 @@
             }
         }
 
-        /**
-         * Displays the detailed analysis table for the selected athlete.
-         */
         function displayAnalysisTable() {
             const selectedAthleteName = document.getElementById('athlete-select').value;
             const container = document.getElementById('analysis-table-container');
@@ -384,9 +309,6 @@
             container.appendChild(table);
         }
 
-        /**
-         * Displays the cumulative percentage difference chart with performance bands.
-         */
         function displayCumulativeChart() {
             const selectedAthleteName = document.getElementById('athlete-select').value;
             const ctx = document.getElementById('cumulative-chart').getContext('2d');
@@ -477,8 +399,6 @@
             });
         }
         
-        // --- Utility and Data Processing Functions ---
-        
         function calculateVirtualBest() { const { headers, rows } = originalProcessedData; const virtualBest = { Name: 'Virtual Best', Phase: '-' }; let virtualTotal = 0; headers.forEach(header => { if (header.startsWith('Split')) { let bestSplit = Infinity; rows.forEach(row => { const splitValue = parseFloat(row[header]); if (!isNaN(splitValue) && splitValue > 0 && splitValue < bestSplit) { bestSplit = splitValue; } }); virtualBest[header] = bestSplit === Infinity ? 0 : bestSplit; virtualTotal += virtualBest[header]; } }); virtualBest['Total'] = virtualTotal; return virtualBest; }
         function calculateCumulativeData(rowData) { const cumulativeTimes = []; let currentTotal = 0; let missedSplit = false; const splitHeaders = originalProcessedData.headers.filter(h => h.startsWith('Split')); for (const header of splitHeaders) { if (missedSplit) { cumulativeTimes.push(null); continue; } const splitValue = parseFloat(rowData[header]); if (!isNaN(splitValue) && splitValue > 0) { currentTotal += splitValue; cumulativeTimes.push(currentTotal); } else { missedSplit = true; cumulativeTimes.push(null); } } return cumulativeTimes; }
         function calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative) { const percentDifference = []; for (let i = 0; i < athleteCumulative.length; i++) { const athleteTime = athleteCumulative[i]; const bestTime = virtualBestCumulative[i]; if (bestTime === null || athleteTime === null || bestTime === 0) { percentDifference.push(null); } else { const difference = ((athleteTime - bestTime) / bestTime) * 100; percentDifference.push(difference); } } return percentDifference; }
@@ -489,6 +409,9 @@
         function displayTable() { if (!originalProcessedData) return; const dataToDisplay = isPercentView ? calculatePercentageData() : originalProcessedData; const { headers, rows } = dataToDisplay; const container = document.getElementById('table-container'); if (headers.length === 0 || rows.length === 0) { container.innerHTML = '<p class="text-center p-8 text-gray-500">No data to display.</p>'; return; } const table = document.createElement('table'); table.className = 'min-w-full divide-y divide-gray-200'; const thead = document.createElement('thead'); thead.className = 'bg-gray-50'; const headerRow = document.createElement('tr'); headers.forEach(headerText => { const th = document.createElement('th'); th.scope = 'col'; th.className = 'px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'; th.textContent = headerText; headerRow.appendChild(th); }); thead.appendChild(headerRow); table.appendChild(thead); const tbody = document.createElement('tbody'); tbody.className = 'bg-white divide-y divide-gray-200'; rows.forEach(rowData => { const tr = document.createElement('tr'); headers.forEach(header => { const td = document.createElement('td'); td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700'; let value = rowData[header]; if (!isPercentView) { const numValue = parseFloat(value); if (!isNaN(numValue)) { value = numValue.toFixed(2); } } td.textContent = value; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); container.innerHTML = ''; container.appendChild(table); highlightTopValues(table, headers); }
         function calculatePercentageData() { const { headers, rows } = originalProcessedData; const newRows = JSON.parse(JSON.stringify(rows)); const splitHeaders = headers.filter(h => h.startsWith('Split')); headers.forEach(header => { const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); if (!isTimeMetric) return; let bestValue = Infinity; rows.forEach(row => { const value = parseFloat(row[header]); if (isNaN(value) || value <= 0) return; if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(row[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) return; } if (value < bestValue) { bestValue = value; } }); if (bestValue === Infinity) return; newRows.forEach((row, rowIndex) => { const originalRow = rows[rowIndex]; const value = parseFloat(originalRow[header]); if (isNaN(value)) return; if (value === 0) { row[header] = 'N/A'; return; } if (header === 'Total') { let hasZeroSplit = false; for (const splitHeader of splitHeaders) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) { row[header] = '-'; return; } } if (value === bestValue) { row[header] = 'Fastest'; } else { const percentage = ((value - bestValue) / bestValue) * 100; row[header] = `+${percentage.toFixed(2)}%`; } }); }); return { headers, rows: newRows }; }
         function highlightTopValues(table, headers) { const tbody = table.querySelector('tbody'); if (!tbody) return; headers.forEach((header, colIndex) => { const values = []; for (let i = 0; i < tbody.rows.length; i++) { const cell = tbody.rows[i].cells[colIndex]; const rawValue = cell.textContent; let numericValue; if (isPercentView) { if (rawValue === 'Fastest') numericValue = 0; else if (rawValue === 'N/A' || rawValue === '-') continue; else numericValue = parseFloat(rawValue.replace('+', '').replace('%', '')); } else { numericValue = parseFloat(rawValue); } if (isNaN(numericValue)) { continue; } if (!isPercentView && numericValue === 0) { continue; } if (header === 'Total') { let hasZeroSplit = false; const originalRow = originalProcessedData.rows[i]; for (const splitHeader of originalProcessedData.headers.filter(h => h.startsWith('Split'))) { if (parseFloat(originalRow[splitHeader]) === 0) { hasZeroSplit = true; break; } } if (hasZeroSplit) continue; } values.push({ value: numericValue, rowIndex: i }); } if (values.length < 1) return; const isTimeMetric = header.toLowerCase().includes('split') || header.toLowerCase().includes('total'); values.sort((a, b) => isTimeMetric ? a.value - b.value : b.value - a.value); const topValues = values.slice(0, 3); if (topValues[0]) { tbody.rows[topValues[0].rowIndex].cells[colIndex].classList.add('gold'); } if (topValues[1]) { tbody.rows[topValues[1].rowIndex].cells[colIndex].classList.add('silver'); } if (topValues[2]) { tbody.rows[topValues[2].rowIndex].cells[colIndex].classList.add('bronze'); } }); }
+        
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
         function showMessage(message, isError = true) {
             const box = document.getElementById('message-box');
             box.textContent = message;
@@ -501,6 +424,5 @@
             }, 3000);
         }
     </script>
-
 </body>
 </html>

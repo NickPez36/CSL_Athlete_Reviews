@@ -177,8 +177,9 @@
                 }
                 const rawData = await response.json();
 
-                // *** FIX: Simplified data processing and added more robust checks ***
-                originalProcessedData = processTableData(rawData);
+                // *** FIX: Use a function to transform the unique JSON format into a standard one ***
+                const standardData = transformRawData(rawData);
+                originalProcessedData = processTableData(standardData);
                 
                 isPercentView = false;
                 document.getElementById('toggle').checked = false;
@@ -193,6 +194,37 @@
                 console.error("Error loading or processing file:", error);
                 showMessage(`Error loading ${fileName}. Please check the file exists and is valid.`, true);
             }
+        }
+
+        /**
+         * *** NEW FUNCTION ***
+         * Transforms the unique semicolon-delimited JSON format into a standard array of objects.
+         * @param {Array<Object>} rawData The raw data from the JSON file.
+         * @returns {Array<Object>} A standard array of data objects.
+         */
+        function transformRawData(rawData) {
+            if (!Array.isArray(rawData) || rawData.length === 0) {
+                return [];
+            }
+
+            // Check if the data is already in the correct format or needs transformation
+            const firstItemKeys = Object.keys(rawData[0]);
+            if (firstItemKeys.length > 1 || !firstItemKeys[0].includes(';')) {
+                return rawData; // Data is likely already standard
+            }
+
+            return rawData.map(entry => {
+                const keyString = Object.keys(entry)[0];
+                const valueString = entry[keyString];
+                if (typeof keyString !== 'string' || typeof valueString !== 'string') return {};
+                const headers = keyString.split(';');
+                const values = valueString.split(';');
+                const newObject = {};
+                headers.forEach((header, index) => {
+                    newObject[header] = values[index];
+                });
+                return newObject;
+            });
         }
 
         function parseFilenameForDetails(fileName) {
@@ -402,7 +434,6 @@
         function calculateCumulativePercentDifference(athleteCumulative, virtualBestCumulative) { const percentDifference = []; for (let i = 0; i < athleteCumulative.length; i++) { const athleteTime = athleteCumulative[i]; const bestTime = virtualBestCumulative[i]; if (bestTime === null || athleteTime === null || bestTime === 0) { percentDifference.push(null); } else { const difference = ((athleteTime - bestTime) / bestTime) * 100; percentDifference.push(difference); } } return percentDifference; }
         function handleToggle() { isPercentView = document.getElementById('toggle').checked; displayTable(); }
         
-        // *** FIX: More robust data processing function ***
         function processTableData(data) {
             if (!Array.isArray(data) || data.length === 0) {
                 return { headers: [], rows: [] };

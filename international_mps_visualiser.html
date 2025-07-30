@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom - International MPS Visualiser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --brand-dark-blue: #0A2B4C; --brand-teal: #0097A7; --brand-light-blue: #4DD0E1; --neutral-white: #FFFFFF; --neutral-light-gray: #F3F4F6; --neutral-text: #1F2937; --feedback-error: #DC2626; --feedback-success: #16A34A; }
+        body { font-family: 'Inter', sans-serif; }
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .text-brand-dark-blue { color: var(--brand-dark-blue); }
+        .text-brand-teal { color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+        .ring-brand-teal { --tw-ring-color: var(--brand-teal); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+        .text-feedback-error { color: var(--feedback-error); }
+        .bg-feedback-error { background-color: var(--feedback-error); }
+        .bg-feedback-success { background-color: var(--feedback-success); }
+        select:disabled { cursor: not-allowed; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--brand-teal); animation: spin 1s ease infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
+
+    <div class="min-h-screen flex flex-col">
+        <nav class="bg-brand-dark-blue shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0">
+                        <img src="assets/Paddle Aus Logo.png" alt="Paddle Australia Logo" class="h-12" onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                    </div>
+                    <div class="hidden md:block">
+                        <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
+                    </div>
+                    <div>
+                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-neutral-text">International MPS Visualiser</h1>
+                    <p class="mt-2 text-lg text-gray-600">Analyze athlete performance against calculated base scores.</p>
+                </header>
+
+                <div id="loading-state" class="text-center py-10">
+                    <div class="spinner mx-auto"></div>
+                    <p class="mt-2 text-lg text-gray-500">Loading competition data...</p>
+                </div>
+
+                <div id="dashboard-content" class="hidden">
+                    <div id="filtersArea" class="p-6 bg-white rounded-xl shadow-md mb-8">
+                        <h2 class="text-2xl font-bold text-center mb-6 text-brand-dark-blue">Analyze Athlete Performance</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="yearSelect" class="block text-sm font-medium text-gray-700 mb-1">1. Select Year</label>
+                                <select id="yearSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
+                            </div>
+                            <div>
+                                <label for="classSelect" class="block text-sm font-medium text-gray-700 mb-1">2. Select Class</label>
+                                <select id="classSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
+                            </div>
+                            <div>
+                                <label for="athleteSearch" class="block text-sm font-medium text-gray-700 mb-1">3. Search Athlete</label>
+                                <input type="text" id="athleteSearch" placeholder="Type to search..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal mb-2" disabled>
+                                <select id="athleteSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal" disabled></select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="athleteResultsArea" class="hidden">
+                         <h2 id="athlete-results-header" class="text-2xl font-bold text-center mb-6 text-brand-dark-blue"></h2>
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm text-left text-gray-700">
+                                    <thead class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wider">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 font-medium">Competition</th>
+                                            <th scope="col" class="px-6 py-3 font-medium">Phase</th>
+                                            <th scope="col" class="px-6 py-3 font-medium text-right">Athlete Time</th>
+                                            <th scope="col" class="px-6 py-3 font-medium text-right">Base Score</th>
+                                            <th scope="col" class="px-6 py-3 font-medium text-right">Performance Standard</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="athleteTableBody" class="divide-y divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                 &copy;2025 Paddle Australia. All rights reserved.
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let allData = [];
+        let baseScoresMap = new Map();
+        let athletesForFilter = [];
+        let colIndices = {};
+
+        const performanceBenchmarks = { 'K1M': 94.44, 'K1W': 108.14, 'C1M': 101.48, 'C1W': 119.70 };
+
+        const loadingState = document.getElementById('loading-state');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const yearSelect = document.getElementById('yearSelect');
+        const classSelect = document.getElementById('classSelect');
+        const athleteSearch = document.getElementById('athleteSearch');
+        const athleteSelect = document.getElementById('athleteSelect');
+        const athleteResultsArea = document.getElementById('athleteResultsArea');
+        const athleteTableBody = document.getElementById('athleteTableBody');
+        const athleteResultsHeader = document.getElementById('athlete-results-header');
+
+        window.addEventListener('DOMContentLoaded', loadDataFromRepo);
+        yearSelect.addEventListener('change', updateAthleteFilter);
+        classSelect.addEventListener('change', updateAthleteFilter);
+        athleteSearch.addEventListener('input', (e) => renderAthleteOptions(e.target.value));
+        athleteSelect.addEventListener('change', handleAthleteSelection);
+
+        async function loadDataFromRepo() {
+            resetApplication();
+            try {
+                const response = await fetch('data/mps_calculations/mps_international_competition_data.csv');
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}.`);
+                
+                const csvText = await response.text();
+                processCSV(csvText);
+            } catch (error) {
+                console.error("Error loading data:", error);
+                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Failed to load data file. Please ensure the file exists at 'data/mps_calculations/mps_international_competition_data.csv'.<br><b>Error:</b> ${error.message}</p>`;
+            }
+        }
+
+        function resetApplication() {
+            allData = [];
+            baseScoresMap.clear();
+            athletesForFilter = [];
+            colIndices = {};
+            
+            dashboardContent.classList.add('hidden');
+            athleteResultsArea.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+
+            [yearSelect, classSelect, athleteSelect].forEach(sel => {
+                sel.innerHTML = `<option value="">-- ${sel.id.replace('Select', ' Select')} --</option>`;
+            });
+            athleteSearch.value = '';
+            athleteSearch.disabled = true;
+            athleteSelect.disabled = true;
+            athleteTableBody.innerHTML = '';
+        }
+        
+        function processCSV(csvText) {
+            const lines = csvText.split(/\r\n|\n/);
+            const header = lines[0].split(',').map(h => h.trim());
+            const requiredColumns = ['Year', 'Competition', 'Phase', 'Class', 'Rank', 'Total Time', 'Athlete Name'];
+            
+            requiredColumns.forEach(col => {
+                const index = header.indexOf(col);
+                if (index === -1) throw new Error(`Required column "${col}" not found in the CSV file.`);
+                colIndices[col] = index;
+            });
+            
+            allData = lines.slice(1).map(line => {
+                if (!line.trim()) return null;
+                const data = line.split(',');
+                const rowData = {};
+                for (const col in colIndices) {
+                    rowData[col] = data[colIndices[col]];
+                }
+                return rowData;
+            }).filter(Boolean);
+
+            calculateAllBaseScores();
+            populateFilters();
+        }
+
+        function calculateAllBaseScores() {
+            const winningTimes = {};
+            const validPhases = new Set(['Heat 1', 'Semi-Final', 'Final']);
+            const validClasses = new Set(['K1M', 'K1W', 'C1M', 'C1W']);
+            
+            allData.forEach(row => {
+                const rank = parseInt(row['Rank'], 10);
+                if (rank === 1 && validPhases.has(row['Phase']) && validClasses.has(row['Class'])) {
+                    const { Year, Competition, Phase, Class } = row;
+                    const totalTime = parseFloat(row['Total Time']);
+                    if (isNaN(totalTime)) return;
+
+                    if (!winningTimes[Year]) winningTimes[Year] = {};
+                    if (!winningTimes[Year][Competition]) winningTimes[Year][Competition] = {};
+                    if (!winningTimes[Year][Competition][Phase]) winningTimes[Year][Competition][Phase] = {};
+                    winningTimes[Year][Competition][Phase][Class] = totalTime;
+                }
+            });
+
+            baseScoresMap.clear();
+            for (const year in winningTimes) {
+                for (const competition in winningTimes[year]) {
+                    for (const phase in winningTimes[year][competition]) {
+                        const classTimes = winningTimes[year][competition][phase];
+                        if (Object.keys(classTimes).length === 4) {
+                            const sumOfTimes = Object.values(classTimes).reduce((a, b) => a + b, 0);
+                            const baseScore = sumOfTimes / 4;
+                            const key = `${year}-${competition}-${phase}`;
+                            baseScoresMap.set(key, baseScore);
+                        }
+                    }
+                }
+            }
+        }
+
+        function populateFilters() {
+            const years = [...new Set(allData.map(row => row.Year))].sort((a, b) => b - a);
+            const classes = [...new Set(allData.map(row => row.Class))].sort();
+
+            yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
+            years.forEach(year => yearSelect.innerHTML += `<option value="${year}">${year}</option>`);
+
+            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+            classes.forEach(cls => classSelect.innerHTML += `<option value="${cls}">${cls}</option>`);
+
+            loadingState.classList.add('hidden');
+            dashboardContent.classList.remove('hidden');
+            showMessage('Data loaded successfully. Select filters to begin.', false);
+        }
+
+        function updateAthleteFilter() {
+            const selectedYear = yearSelect.value;
+            const selectedClass = classSelect.value;
+            
+            athleteSearch.value = '';
+            athleteResultsArea.classList.add('hidden');
+
+            if (selectedYear && selectedClass) {
+                athletesForFilter = [...new Set(
+                    allData
+                        .filter(row => row.Year === selectedYear && row.Class === selectedClass)
+                        .map(row => row['Athlete Name'])
+                )].sort();
+                
+                athleteSearch.disabled = false;
+                athleteSelect.disabled = false;
+                renderAthleteOptions();
+            } else {
+                athletesForFilter = [];
+                athleteSearch.disabled = true;
+                athleteSelect.disabled = true;
+                renderAthleteOptions(); 
+            }
+        }
+        
+        function renderAthleteOptions(searchTerm = '') {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+            const filteredAthletes = athletesForFilter.filter(name => name.toLowerCase().includes(lowerCaseSearchTerm));
+            
+            const currentSelection = athleteSelect.value;
+            
+            if (athletesForFilter.length === 0) {
+                athleteSelect.innerHTML = '<option value="">-- Select Athlete --</option>';
+            } else if (filteredAthletes.length === 0) {
+                athleteSelect.innerHTML = '<option value="">-- No match found --</option>';
+            } else {
+                athleteSelect.innerHTML = '<option value="">-- Select Athlete --</option>';
+                filteredAthletes.forEach(athlete => {
+                    const isSelected = athlete === currentSelection ? 'selected' : '';
+                    athleteSelect.innerHTML += `<option value="${athlete}" ${isSelected}>${athlete}</option>`;
+                });
+            }
+        }
+
+        function handleAthleteSelection() {
+            const selectedAthlete = athleteSelect.value;
+            const selectedYear = yearSelect.value;
+            const selectedClass = classSelect.value;
+
+            athleteTableBody.innerHTML = '';
+            if (!selectedAthlete) {
+                athleteResultsArea.classList.add('hidden');
+                return;
+            }
+
+            const athletePerformances = allData
+                .filter(row => row.Year === selectedYear && row.Class === selectedClass && row['Athlete Name'] === selectedAthlete)
+                .map(row => {
+                    const baseScoreKey = `${row.Year}-${row.Competition}-${row.Phase}`;
+                    const baseScore = baseScoresMap.get(baseScoreKey);
+                    const athleteTime = parseFloat(row['Total Time']);
+                    
+                    let performanceStandardText = 'N/A';
+                    let performanceValue = null;
+
+                    if (baseScore && !isNaN(athleteTime)) {
+                        performanceValue = (athleteTime / baseScore) * 100;
+                        performanceStandardText = performanceValue.toFixed(2) + '%';
+                    }
+                    return {
+                        competition: row.Competition,
+                        phase: row.Phase,
+                        athleteTime: isNaN(athleteTime) ? 'N/A' : athleteTime.toFixed(2),
+                        baseScore: baseScore ? baseScore.toFixed(2) : 'N/A',
+                        performanceStandard: performanceStandardText,
+                        performanceValue: performanceValue
+                    };
+                });
+            
+            athleteResultsHeader.textContent = `Performance for ${selectedAthlete} (${selectedYear} - ${selectedClass})`;
+            displayAthletePerformance(athletePerformances);
+        }
+        
+        function displayAthletePerformance(performances) {
+            const selectedClass = classSelect.value;
+            const benchmark = performanceBenchmarks[selectedClass];
+
+            if (performances.length > 0) {
+                athleteTableBody.innerHTML = '';
+                performances.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+
+                    let performanceCellClass = 'px-6 py-4 whitespace-nowrap text-right font-medium text-gray-900';
+                    if (item.performanceValue !== null && benchmark && item.performanceValue <= benchmark) {
+                        performanceCellClass = 'px-6 py-4 whitespace-nowrap text-right font-bold text-green-600';
+                    }
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${item.competition}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.phase}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">${item.athleteTime}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">${item.baseScore}</td>
+                        <td class="${performanceCellClass}">${item.performanceStandard}</td>
+                    `;
+                    athleteTableBody.appendChild(row);
+                });
+                athleteResultsArea.classList.remove('hidden');
+            } else {
+                athleteResultsArea.classList.add('hidden');
+            }
+        }
+
+        function showMessage(message, isError = true) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
+            box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
+            box.classList.remove('hidden', 'opacity-0');
+            setTimeout(() => {
+                box.classList.add('opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

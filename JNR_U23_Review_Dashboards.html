@@ -148,7 +148,6 @@
         let allData = [];
 
         async function loadDataFromRepo() {
-            // *** FIX: Using absolute URL to raw GitHub content ***
             const dataFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/JNR_U23/slalom_results_with_overall_rank.csv';
             try {
                 const response = await fetch(dataFilePath);

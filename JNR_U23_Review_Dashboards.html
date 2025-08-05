@@ -125,6 +125,7 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Element Selectors ---
         const mainApp = document.getElementById('main-app');
         const loadingState = document.getElementById('loading-state');
         
@@ -145,8 +146,12 @@
         const athleteAgeSelect = document.getElementById('athlete-age-select');
         const athleteResultsContainer = document.getElementById('athlete-results-container');
         
+        // --- Global State ---
         let allData = [];
 
+        // --- Data Loading and Processing ---
+        
+        // This function fetches the CSV data from the specified GitHub repository URL.
         async function loadDataFromRepo() {
             const dataFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/JNR_U23/slalom_results_with_overall_rank.csv';
             try {
@@ -162,11 +167,13 @@
             }
         }
 
+        // This function parses the raw CSV text into an array of JavaScript objects.
         function parseCSV(csvText) {
             const lines = csvText.trim().split(/\r?\n/);
             if (lines.length < 2) return [];
             const headers = lines[0].split(',').map(h => h.trim());
             return lines.slice(1).map(line => {
+                // Regex to split by comma but ignore commas inside double quotes
                 const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 if (values.length === headers.length) {
                     const entry = {};
@@ -174,12 +181,14 @@
                     return entry;
                 }
                 return null;
-            }).filter(Boolean);
+            }).filter(Boolean); // Filter out any null entries from parsing errors
         }
 
+        // This function validates the loaded data and initializes the application.
         function processData(csvText) {
             allData = parseCSV(csvText);
             const requiredColumns = ['Athlete_ID', 'Bib', 'Overall Rank', 'Year', 'Nation', 'Competition'];
+            // Check if data is loaded and has the necessary columns
             if (allData.length > 0 && requiredColumns.every(col => allData[0].hasOwnProperty(col))) {
                 loadingState.style.display = 'none';
                 mainApp.classList.remove('hidden');
@@ -187,17 +196,27 @@
                 initializeViews();
                 showMessage('Data loaded successfully!', false);
             } else {
-                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Error: Invalid file. Please ensure the CSV contains required columns like 'Athlete_ID', 'Bib', 'Overall Rank', etc.</p>`;
+                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Error: Invalid file format. Please ensure the CSV contains the required columns: 'Athlete_ID', 'Bib', 'Overall Rank', 'Year', 'Nation', 'Competition'.</p>`;
             }
         }
+        
+        // --- Initialization ---
 
+        // Kicks off the entire data loading process once the DOM is ready.
+        loadDataFromRepo();
+
+        // Sets up the initial state of the UI controls and views.
         function initializeViews() {
-            toggleMainView('team');
+            toggleMainView('team'); // Default to team view
+            // Populate the year dropdown for the athlete view
             const years = [...new Set(allData.map(row => row.Year))].sort((a, b) => b - a);
             athleteYearSelect.innerHTML = '<option value="">Select Year</option>';
             years.forEach(year => athleteYearSelect.innerHTML += `<option value="${year}">${year}</option>`);
         }
+        
+        // --- UI Logic and Event Handlers ---
 
+        // Toggles between the "Team Review" and "Athlete Review" sections.
         function toggleMainView(view) {
             if (view === 'team') {
                 teamReviewBtn.classList.add('active-view-btn');
@@ -216,6 +235,7 @@
             }
         }
 
+        // Handles the selection of a team age group (Junior, U23, All).
         function handleTeamAgeSelection(competitionName) {
             [juniorBtn, u23Btn, allTeamBtn].forEach(btn => btn.classList.remove('active-team-btn'));
             const selectedButton = document.querySelector(`[data-competition="${competitionName}"]`);
@@ -237,6 +257,7 @@
             teamNationSelect.value = '';
         }
 
+        // Analyzes and displays the results for the selected team.
         function analyzeAndDisplayTeamResults(selectedNation, competitionName) {
             if (!selectedNation) {
                 teamResultsContainer.innerHTML = '';
@@ -277,6 +298,7 @@
             renderTeamResults(resultsByYear, selectedNation);
         }
 
+        // Renders the team result cards to the DOM.
         function renderTeamResults(resultsByYear, selectedNation) {
             teamResultsContainer.innerHTML = ''; 
             const years = Object.keys(resultsByYear).sort((a, b) => b - a); 
@@ -310,6 +332,7 @@
             teamResultsContainer.appendChild(grid);
         }
 
+        // Updates the nation filter based on the selected year in the athlete view.
         function updateAthleteNationFilter() {
             const year = athleteYearSelect.value;
             athleteNationSelect.innerHTML = '<option value="">Select Nation</option>';
@@ -323,6 +346,7 @@
             }
         }
         
+        // Displays detailed results for individual athletes based on filters.
         function displayAthleteResults() {
             const year = athleteYearSelect.value;
             const nation = athleteNationSelect.value;
@@ -350,6 +374,7 @@
             renderAthleteResults(Object.values(groupedByAthlete));
         }
 
+        // Renders the individual athlete result cards to the DOM.
         function renderAthleteResults(athletes) {
             athleteResultsContainer.innerHTML = '';
             if (athletes.length === 0) {
@@ -421,7 +446,8 @@
                 athleteResultsContainer.appendChild(card);
             });
         }
-
+        
+        // --- Event Listeners ---
         teamReviewBtn.addEventListener('click', () => toggleMainView('team'));
         athleteReviewBtn.addEventListener('click', () => toggleMainView('athlete'));
 
@@ -436,6 +462,9 @@
         });
         athleteAgeSelect.addEventListener('change', displayAthleteResults);
         
+        // --- Utility Functions ---
+        
+        // Shows a temporary success or error message box on the screen.
         function showMessage(message, isError = true) {
             const box = document.getElementById('message-box');
             box.textContent = message;

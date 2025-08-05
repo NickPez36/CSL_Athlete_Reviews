@@ -148,7 +148,8 @@
         let allData = [];
 
         async function loadDataFromRepo() {
-            const dataFilePath = 'data/JNR_U23/slalom_results_with_overall_rank.csv';
+            // *** FIX: Using absolute URL to raw GitHub content ***
+            const dataFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/JNR_U23/slalom_results_with_overall_rank.csv';
             try {
                 const response = await fetch(dataFilePath);
                 if (!response.ok) {
@@ -157,7 +158,7 @@
                 const csvText = await response.text();
                 processData(csvText);
             } catch (error) {
-                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Failed to load data file. Please ensure the file exists at '${dataFilePath}'.<br><b>Error:</b> ${error.message}</p>`;
+                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Failed to load data file. Please ensure the file exists at the correct path in your repository.<br><b>Error:</b> ${error.message}</p>`;
                 console.error("Data loading failed:", error);
             }
         }

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canoe Slalom - JNR & U23 Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --brand-dark-blue: #0A2B4C; --brand-teal: #0097A7; --brand-light-blue: #4DD0E1; --neutral-white: #FFFFFF; --neutral-light-gray: #F3F4F6; --neutral-text: #1F2937; --feedback-error: #DC2626; --feedback-success: #16A34A; }
+        body { font-family: 'Inter', sans-serif; }
+        .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
+        .text-brand-dark-blue { color: var(--brand-dark-blue); }
+        .text-brand-teal { color: var(--brand-teal); }
+        .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+        .text-neutral-text { color: var(--neutral-text); }
+        .border-brand-teal { border-color: var(--brand-teal); }
+        .ring-brand-teal { --tw-ring-color: var(--brand-teal); }
+        .hover\:bg-brand-teal:hover { background-color: var(--brand-teal); }
+        .text-feedback-error { color: var(--feedback-error); }
+        .bg-feedback-error { background-color: var(--feedback-error); }
+        .bg-feedback-success { background-color: var(--feedback-success); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .active-view-btn { background-color: var(--brand-teal); color: white; }
+        .inactive-view-btn { background-color: #e5e7eb; color: #4b5563; }
+        .active-team-btn { background-color: var(--brand-dark-blue); color: white; border-color: var(--brand-dark-blue); }
+        .tooltip { visibility: hidden; opacity: 0; transition: opacity 0.3s; }
+        .has-tooltip:hover .tooltip { visibility: visible; opacity: 1; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--brand-teal); animation: spin 1s ease infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-neutral-light-gray">
+
+    <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
+
+    <div class="min-h-screen flex flex-col">
+        <nav class="bg-brand-dark-blue shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0">
+                        <img src="assets/Paddle Aus Logo.png" alt="Paddle Australia Logo" class="h-12" onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                    </div>
+                    <div class="hidden md:block">
+                        <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
+                    </div>
+                    <div>
+                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                <header class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-neutral-text">JNR & U23 Performance Analyzer</h1>
+                    <p class="mt-2 text-lg text-gray-600">Switch between high-level team analysis and individual athlete deep-dives.</p>
+                </header>
+
+                <div id="loading-state" class="text-center py-10">
+                    <div class="spinner mx-auto"></div>
+                    <p class="mt-2 text-lg text-gray-500">Loading competition data...</p>
+                </div>
+
+                <main id="main-app" class="hidden bg-white p-6 rounded-xl shadow-lg">
+                    <div class="mb-8 flex justify-center p-1 bg-gray-200 rounded-lg">
+                        <button id="team-review-btn" class="w-1/2 py-2.5 text-sm font-semibold rounded-md transition-all duration-300">Team Review</button>
+                        <button id="athlete-review-btn" class="w-1/2 py-2.5 text-sm font-semibold rounded-md transition-all duration-300">Athlete Review</button>
+                    </div>
+
+                    <div id="team-review-container">
+                        <div id="team-controls">
+                            <div class="mb-6">
+                                <h2 class="text-xl font-semibold mb-3 text-center text-brand-dark-blue">1. Select Team View</h2>
+                                <div class="flex justify-center flex-wrap gap-4">
+                                    <button id="junior-btn" data-competition="Junior World Championships" class="px-6 py-3 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal transition-all duration-200 w-32 hover:bg-gray-50 border">Junior</button>
+                                    <button id="all-team-btn" data-competition="All" class="px-6 py-3 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal transition-all duration-200 w-32 hover:bg-gray-50 border">All</button>
+                                    <button id="u23-btn" data-competition="U23 World Championships" class="px-6 py-3 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal transition-all duration-200 w-32 hover:bg-gray-50 border">U23</button>
+                                </div>
+                            </div>
+                            <div id="team-nation-selection-container" class="hidden mb-6">
+                                <h2 class="text-xl font-semibold mb-3 text-center text-brand-dark-blue">2. Select Nation</h2>
+                                <div class="max-w-xs mx-auto">
+                                     <select id="team-nation-select" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-teal transition-all duration-200"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="team-results-container" class="mt-8"></div>
+                    </div>
+
+                    <div id="athlete-review-container" class="hidden">
+                        <div id="athlete-controls" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-8 border-b pb-6">
+                            <div>
+                                <label for="athlete-year-select" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                                <select id="athlete-year-select" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-teal"></select>
+                            </div>
+                            <div>
+                                <label for="athlete-nation-select" class="block text-sm font-medium text-gray-700 mb-1">Nation</label>
+                                <select id="athlete-nation-select" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-teal" disabled></select>
+                            </div>
+                            <div>
+                                <label for="athlete-age-select" class="block text-sm font-medium text-gray-700 mb-1">Age Bracket</label>
+                                <select id="athlete-age-select" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-teal" disabled>
+                                    <option value="All">All</option>
+                                    <option value="Junior World Championships">Junior</option>
+                                    <option value="U23 World Championships">U23</option>
+                                </select>
+                            </div>
+                        </div>
+                         <div id="athlete-results-container" class="mt-8"></div>
+                    </div>
+                </main>
+            </div>
+        </main>
+
+        <footer class="bg-white">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                 &copy;2025 Paddle Australia. All rights reserved.
+            </div>
+        </footer>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mainApp = document.getElementById('main-app');
+        const loadingState = document.getElementById('loading-state');
+        
+        const teamReviewBtn = document.getElementById('team-review-btn');
+        const athleteReviewBtn = document.getElementById('athlete-review-btn');
+        const teamReviewContainer = document.getElementById('team-review-container');
+        const athleteReviewContainer = document.getElementById('athlete-review-container');
+
+        const juniorBtn = document.getElementById('junior-btn');
+        const u23Btn = document.getElementById('u23-btn');
+        const allTeamBtn = document.getElementById('all-team-btn');
+        const teamNationSelectionContainer = document.getElementById('team-nation-selection-container');
+        const teamNationSelect = document.getElementById('team-nation-select');
+        const teamResultsContainer = document.getElementById('team-results-container');
+
+        const athleteYearSelect = document.getElementById('athlete-year-select');
+        const athleteNationSelect = document.getElementById('athlete-nation-select');
+        const athleteAgeSelect = document.getElementById('athlete-age-select');
+        const athleteResultsContainer = document.getElementById('athlete-results-container');
+        
+        let allData = [];
+
+        async function loadDataFromRepo() {
+            const dataFilePath = 'data/JNR_U23/slalom_results_with_overall_rank.csv';
+            try {
+                const response = await fetch(dataFilePath);
+                if (!response.ok) {
+                    throw new Error(`Could not load data file. Status: ${response.status}.`);
+                }
+                const csvText = await response.text();
+                processData(csvText);
+            } catch (error) {
+                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Failed to load data file. Please ensure the file exists at '${dataFilePath}'.<br><b>Error:</b> ${error.message}</p>`;
+                console.error("Data loading failed:", error);
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim());
+            return lines.slice(1).map(line => {
+                const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if (values.length === headers.length) {
+                    const entry = {};
+                    headers.forEach((header, i) => entry[header] = values[i].trim().replace(/^"|"$/g, ''));
+                    return entry;
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        function processData(csvText) {
+            allData = parseCSV(csvText);
+            const requiredColumns = ['Athlete_ID', 'Bib', 'Overall Rank', 'Year', 'Nation', 'Competition'];
+            if (allData.length > 0 && requiredColumns.every(col => allData[0].hasOwnProperty(col))) {
+                loadingState.style.display = 'none';
+                mainApp.classList.remove('hidden');
+                mainApp.classList.add('fade-in');
+                initializeViews();
+                showMessage('Data loaded successfully!', false);
+            } else {
+                loadingState.innerHTML = `<p class="text-lg text-feedback-error">Error: Invalid file. Please ensure the CSV contains required columns like 'Athlete_ID', 'Bib', 'Overall Rank', etc.</p>`;
+            }
+        }
+
+        function initializeViews() {
+            toggleMainView('team');
+            const years = [...new Set(allData.map(row => row.Year))].sort((a, b) => b - a);
+            athleteYearSelect.innerHTML = '<option value="">Select Year</option>';
+            years.forEach(year => athleteYearSelect.innerHTML += `<option value="${year}">${year}</option>`);
+        }
+
+        function toggleMainView(view) {
+            if (view === 'team') {
+                teamReviewBtn.classList.add('active-view-btn');
+                teamReviewBtn.classList.remove('inactive-view-btn');
+                athleteReviewBtn.classList.remove('active-view-btn');
+                athleteReviewBtn.classList.add('inactive-view-btn');
+                teamReviewContainer.classList.remove('hidden');
+                athleteReviewContainer.classList.add('hidden');
+            } else {
+                athleteReviewBtn.classList.add('active-view-btn');
+                athleteReviewBtn.classList.remove('inactive-view-btn');
+                teamReviewBtn.classList.remove('active-view-btn');
+                teamReviewBtn.classList.add('inactive-view-btn');
+                athleteReviewContainer.classList.remove('hidden');
+                teamReviewContainer.classList.add('hidden');
+            }
+        }
+
+        function handleTeamAgeSelection(competitionName) {
+            [juniorBtn, u23Btn, allTeamBtn].forEach(btn => btn.classList.remove('active-team-btn'));
+            const selectedButton = document.querySelector(`[data-competition="${competitionName}"]`);
+            if (selectedButton) selectedButton.classList.add('active-team-btn');
+            
+            let filteredData;
+            if (competitionName === 'All') {
+                filteredData = allData.filter(row => ["Junior World Championships", "U23 World Championships"].includes(row.Competition));
+            } else {
+                filteredData = allData.filter(row => row.Competition === competitionName);
+            }
+            
+            const nations = [...new Set(filteredData.map(row => row.Nation))].filter(Boolean).sort();
+            teamNationSelect.innerHTML = '<option value="">Select Nation</option>'; 
+            nations.forEach(nation => teamNationSelect.innerHTML += `<option value="${nation}">${nation}</option>`);
+
+            teamNationSelectionContainer.classList.remove('hidden');
+            teamResultsContainer.innerHTML = '';
+            teamNationSelect.value = '';
+        }
+
+        function analyzeAndDisplayTeamResults(selectedNation, competitionName) {
+            if (!selectedNation) {
+                teamResultsContainer.innerHTML = '';
+                return;
+            }
+            
+            let filteredData;
+            if (competitionName === 'All') {
+                filteredData = allData.filter(row => ["Junior World Championships", "U23 World Championships"].includes(row.Competition));
+            } else {
+                filteredData = allData.filter(row => row.Competition === competitionName);
+            }
+            const nationData = filteredData.filter(row => row.Nation === selectedNation);
+            
+            const resultsByYear = nationData.reduce((acc, row) => {
+                const year = row.Year;
+                if (!year) return acc;
+                if (!acc[year]) {
+                    acc[year] = { location: row.Location || 'N/A', athleteIds: new Set(), 'Semi-Final': 0, 'Final': 0, 'Medalists': 0, rankImprovedCount: 0, processedForRank: new Set(), hasBibData: false };
+                }
+                if (row.Athlete_ID) acc[year].athleteIds.add(row.Athlete_ID);
+                if (row.Phase === 'Semi-Final') acc[year]['Semi-Final']++;
+                else if (row.Phase === 'Final') {
+                    acc[year]['Final']++;
+                    if (['1', '2', '3'].includes(row.Rank)) acc[year]['Medalists']++;
+                }
+                if (row.Athlete_ID && !acc[year].processedForRank.has(row.Athlete_ID)) {
+                    const bib = parseInt(row.Bib, 10);
+                    if (!isNaN(bib) && bib > 0) {
+                        acc[year].hasBibData = true;
+                        const overallRank = parseInt(row['Overall Rank'], 10);
+                        if (!isNaN(overallRank) && overallRank <= bib) acc[year].rankImprovedCount++;
+                    }
+                    acc[year].processedForRank.add(row.Athlete_ID);
+                }
+                return acc;
+            }, {});
+            renderTeamResults(resultsByYear, selectedNation);
+        }
+
+        function renderTeamResults(resultsByYear, selectedNation) {
+            teamResultsContainer.innerHTML = ''; 
+            const years = Object.keys(resultsByYear).sort((a, b) => b - a); 
+            if (years.length === 0) {
+                teamResultsContainer.innerHTML = `<div class="text-center p-6 bg-gray-50 rounded-lg"><p class="text-gray-600">No data found for <span class="font-bold">${selectedNation}</span> in the selected view.</p></div>`;
+                return;
+            }
+            const resultsTitle = document.createElement('h2');
+            resultsTitle.className = 'text-2xl font-bold text-center mb-6 text-brand-dark-blue';
+            resultsTitle.innerHTML = `Team Results for <span class="text-brand-teal">${selectedNation}</span>`;
+            teamResultsContainer.appendChild(resultsTitle);
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+            years.forEach(year => {
+                const data = resultsByYear[year];
+                const startingAthletes = data.athleteIds.size;
+                const getPercentage = (count) => startingAthletes > 0 ? ((count / startingAthletes) * 100).toFixed(1) : 0;
+                const createStatRow = (label, count) => `<li class="flex justify-between items-center py-2 border-b border-gray-200"><span>${label}:</span><span class="relative has-tooltip"><span class="font-semibold text-lg text-brand-teal cursor-pointer">${count}</span><div class="tooltip absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md shadow-lg z-10">${getPercentage(count)}% of starters</div></span></li>`;
+                let performanceSectionHTML;
+                if (data.hasBibData) {
+                    const rankImprovedPercent = startingAthletes > 0 ? ((data.rankImprovedCount / startingAthletes) * 100).toFixed(1) : 0;
+                    performanceSectionHTML = `<div class="mt-auto bg-green-50 p-4 rounded-b-lg border-t border-green-200"><h4 class="text-sm font-semibold text-green-800 text-center">Performance vs. Seeding</h4><p class="text-3xl font-bold text-green-600 text-center mt-1">${rankImprovedPercent}%</p><p class="text-xs text-green-700 text-center mt-1">${data.rankImprovedCount} of ${startingAthletes} athletes improved rank</p></div>`;
+                } else {
+                    performanceSectionHTML = `<div class="mt-auto bg-gray-100 p-4 rounded-b-lg border-t border-gray-200"><h4 class="text-sm font-semibold text-gray-600 text-center">Performance vs. Seeding</h4><p class="text-lg font-medium text-gray-500 text-center mt-2 py-4">No Bib Data</p></div>`;
+                }
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-lg shadow-sm fade-in hover:shadow-lg transition-shadow duration-300 flex flex-col';
+                card.innerHTML = `<div class="p-5"><h3 class="text-xl font-bold text-gray-900">${year}</h3><p class="text-sm text-gray-500 mb-4">${data.location}</p><ul class="text-gray-700">${createStatRow('Starting Athletes', startingAthletes)}${createStatRow('Semi-Final Athletes', data['Semi-Final'])}${createStatRow('Final Athletes', data['Final'])}${createStatRow('Medalists', data['Medalists'])}</ul></div>${performanceSectionHTML}`;
+                grid.appendChild(card);
+            });
+            teamResultsContainer.appendChild(grid);
+        }
+
+        function updateAthleteNationFilter() {
+            const year = athleteYearSelect.value;
+            athleteNationSelect.innerHTML = '<option value="">Select Nation</option>';
+            athleteNationSelect.disabled = true;
+            athleteAgeSelect.disabled = true;
+            athleteResultsContainer.innerHTML = '';
+            if (year) {
+                const nations = [...new Set(allData.filter(row => row.Year === year).map(row => row.Nation))].filter(Boolean).sort();
+                nations.forEach(nation => athleteNationSelect.innerHTML += `<option value="${nation}">${nation}</option>`);
+                athleteNationSelect.disabled = false;
+            }
+        }
+        
+        function displayAthleteResults() {
+            const year = athleteYearSelect.value;
+            const nation = athleteNationSelect.value;
+            const age = athleteAgeSelect.value;
+
+            if (!year || !nation) {
+                athleteResultsContainer.innerHTML = '';
+                return;
+            }
+            
+            let filtered = allData.filter(row => row.Year === year && row.Nation === nation);
+            if (age !== 'All') {
+                filtered = filtered.filter(row => row.Competition === age);
+            }
+
+            const groupedByAthlete = filtered.reduce((acc, row) => {
+                const id = row.Athlete_ID;
+                if (!acc[id]) {
+                    acc[id] = { name: row['Athlete Name'], class: row.Class, bib: row.Bib, overallRank: row['Overall Rank'], phases: [] };
+                }
+                acc[id].phases.push(row);
+                return acc;
+            }, {});
+            
+            renderAthleteResults(Object.values(groupedByAthlete));
+        }
+
+        function renderAthleteResults(athletes) {
+            athleteResultsContainer.innerHTML = '';
+            if (athletes.length === 0) {
+                athleteResultsContainer.innerHTML = `<div class="text-center p-6 bg-gray-50 rounded-lg"><p class="text-gray-600">No athlete data found for the selected filters.</p></div>`;
+                return;
+            }
+            const phaseOrder = {'Heat 1': 1, 'Heat 2': 2, 'Semi-Final': 3, 'Final': 4};
+
+            athletes.sort((a,b) => a.name.localeCompare(b.name) || a.class.localeCompare(b.class)).forEach(athlete => {
+                const bib = parseInt(athlete.bib, 10);
+                const overallRank = parseInt(athlete.overallRank, 10);
+                let performanceIndicatorHTML;
+                if (!isNaN(bib) && bib > 0 && !isNaN(overallRank)) {
+                    const improved = overallRank <= bib;
+                    performanceIndicatorHTML = `<span class="px-2 py-1 text-xs font-semibold rounded-full ${improved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${improved ? 'Beat Seeding' : 'Under Seeding'}</span>`;
+                } else {
+                    performanceIndicatorHTML = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">No Bib Data</span>`;
+                }
+
+                const phaseRows = athlete.phases.sort((a,b) => (phaseOrder[a.Phase] || 99) - (phaseOrder[b.Phase] || 99)).map(phase => `
+                    <tr class="border-b border-gray-200 last:border-b-0">
+                        <td class="p-3 text-sm text-gray-700 font-medium">${phase.Phase}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase.Rank}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase['Raw Time']}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase['Total Penalties']}</td>
+                        <td class="p-3 text-sm text-gray-500 font-semibold">${phase['Total Time']}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase['Total Time Behind']}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase['Total Time % Behind Winner']}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase['Raw Time Behind Winner']}</td>
+                        <td class="p-3 text-sm text-gray-500">${phase['Raw % Behind Winner']}</td>
+                    </tr>
+                `).join('');
+
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-lg shadow-sm mb-6 fade-in';
+                card.innerHTML = `
+                    <div class="p-4 border-b bg-gray-50 rounded-t-lg flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">${athlete.name}</h3>
+                            <p class="text-sm text-gray-600">${athlete.class}</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <h4 class="text-xs font-semibold text-gray-500 uppercase">Overall Rank</h4>
+                                <p class="text-lg font-bold text-brand-teal">${athlete.overallRank || 'N/A'}</p>
+                            </div>
+                            ${performanceIndicatorHTML}
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[900px]">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Phase</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Rank</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Raw Time</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Penalties</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Total Time</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Time Behind</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">% Behind</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Raw Time Behind</th>
+                                    <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Raw % Behind</th>
+                                </tr>
+                            </thead>
+                            <tbody>${phaseRows}</tbody>
+                        </table>
+                    </div>
+                `;
+                athleteResultsContainer.appendChild(card);
+            });
+        }
+
+        teamReviewBtn.addEventListener('click', () => toggleMainView('team'));
+        athleteReviewBtn.addEventListener('click', () => toggleMainView('athlete'));
+
+        [juniorBtn, u23Btn, allTeamBtn].forEach(btn => btn.addEventListener('click', () => handleTeamAgeSelection(btn.dataset.competition)));
+        teamNationSelect.addEventListener('change', (e) => analyzeAndDisplayTeamResults(e.target.value, document.querySelector('#team-controls .active-team-btn').dataset.competition));
+
+        athleteYearSelect.addEventListener('change', updateAthleteNationFilter);
+        athleteNationSelect.addEventListener('change', () => {
+            athleteAgeSelect.disabled = false;
+            athleteAgeSelect.value = 'All';
+            displayAthleteResults();
+        });
+        athleteAgeSelect.addEventListener('change', displayAthleteResults);
+        
+        function showMessage(message, isError = true) {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
+            box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
+            box.classList.remove('hidden', 'opacity-0');
+            setTimeout(() => {
+                box.classList.add('opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    });
+    </script>
+</body>
+</html>

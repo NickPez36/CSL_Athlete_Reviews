@@ -10,24 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Set the custom font for the page */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        /* Define the color palette as CSS Variables for easy use */
-        :root {
-            --brand-dark-blue: #0A2B4C;
-            --brand-teal: #0097A7;
-            --brand-light-blue: #4DD0E1;
-            --neutral-white: #FFFFFF;
-            --neutral-light-gray: #F3F4F6;
-            --neutral-text: #1F2937;
-            --feedback-error: #DC2626;
-            --feedback-success: #16A34A;
-        }
-
-        /* Apply custom colors using the variables */
+        :root { --brand-dark-blue: #0A2B4C; --brand-teal: #0097A7; --brand-light-blue: #4DD0E1; --neutral-white: #FFFFFF; --neutral-light-gray: #F3F4F6; --neutral-text: #1F2937; --feedback-error: #DC2626; --feedback-success: #16A34A; }
+        body { font-family: 'Inter', sans-serif; }
         .bg-brand-dark-blue { background-color: var(--brand-dark-blue); }
         .text-brand-dark-blue { color: var(--brand-dark-blue); }
         .text-brand-teal { color: var(--brand-teal); }
@@ -39,57 +23,60 @@
         .text-feedback-error { color: var(--feedback-error); }
         .bg-feedback-error { background-color: var(--feedback-error); }
         .bg-feedback-success { background-color: var(--feedback-success); }
+        .tab-btn.active { border-bottom-color: var(--brand-teal); color: var(--brand-dark-blue); font-weight: 600; }
+        .tab-btn { border-bottom: 2px solid transparent; }
+        .tab-btn:disabled { color: #9ca3af; cursor: not-allowed; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--brand-teal); animation: spin 1s ease infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-neutral-light-gray">
 
-    <!-- Message Box for notifications -->
     <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
 
-    <!-- Main Container -->
     <div class="min-h-screen flex flex-col">
-
-        <!-- Header Navigation -->
         <nav class="bg-brand-dark-blue shadow-lg">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20">
                     <div class="flex-shrink-0">
-                        <img 
-                            src="assets/Paddle Aus Logo.png" 
-                            alt="Paddle Australia Logo" 
-                            class="h-12"
-                            onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
+                        <img src="assets/Paddle Aus Logo.png" alt="Paddle Australia Logo" class="h-12" onerror="this.onerror=null; this.src='https://placehold.co/150x50/ffffff/0a2b4c?text=Paddle+Australia';">
                     </div>
                     <div class="hidden md:block">
                         <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
                     </div>
                     <div>
                         <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="login.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Page Content -->
-        <main id="main-content" class="flex-grow">
+        <main class="flex-grow">
             <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                
-                <!-- Page Header -->
                 <header class="mb-8">
                     <h1 class="text-3xl font-bold text-neutral-text">World Ranking Visualizer</h1>
-                    <p class="mt-2 text-lg text-gray-600">With Olympic Medalist Progression Overlay</p>
+                    <p class="mt-2 text-lg text-gray-600">Analyze athlete progression over time</p>
                 </header>
                 
-                <!-- Loading State -->
                 <div id="loading-state" class="text-center py-10">
-                    <p class="text-lg text-gray-500">Loading data, please wait...</p>
+                    <div class="spinner mx-auto"></div>
+                    <p class="mt-2 text-lg text-gray-500">Loading ranking data...</p>
                 </div>
 
-                <!-- Main dashboard (initially hidden) -->
                 <div id="dashboard-content" class="hidden">
-                    <!-- Filter Controls -->
+                    <div class="border-b border-gray-200 mb-8">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button id="tab-release" class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">World Ranking by Release</button>
+                            <button id="tab-age" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">World Ranking by Age</button>
+                        </nav>
+                    </div>
+
                     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                        <div id="age-tab-warning" class="hidden mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                            <p class="font-bold">Age Data Missing</p>
+                            <p>The 'World Ranking by Age' tab is disabled because the loaded ranking file is missing the 'Year of Birth' column.</p>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                             <div>
                                 <label for="class-select" class="block text-sm font-medium text-gray-700 mb-2">Select Class:</label>
@@ -105,9 +92,12 @@
                             <input id="medalist-toggle" type="checkbox" class="h-4 w-4 text-brand-teal focus:ring-brand-teal border-gray-300 rounded">
                             <label for="medalist-toggle" class="ml-2 block text-sm text-gray-900">Show Olympic Medalist Trajectory</label>
                         </div>
+                        <div id="medalist-names-container" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-600">Trajectory calculated from:</h3>
+                            <p id="medalist-names-list" class="text-sm text-gray-800 mt-1"></p>
+                        </div>
                     </div>
 
-                    <!-- Chart Container -->
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <div class="flex justify-end mb-4">
                             <button id="reset-zoom-btn" class="px-4 py-2 bg-brand-dark-blue text-white rounded-md shadow-sm hover:bg-brand-teal focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal">Reset Zoom</button>
@@ -118,24 +108,22 @@
             </div>
         </main>
         
-        <!-- Footer -->
         <footer class="bg-white">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
                  &copy;2025 Paddle Australia. All rights reserved.
             </div>
         </footer>
-
     </div>
 
     <script>
         let rankingData = null;
         let medalistData = null;
         let myChart;
+        let currentViewMode = 'release';
 
-        // --- DATA FETCHING AND STATE MANAGEMENT ---
         async function loadInitialData() {
-            const rankingFilePath = 'data/world_ranking/Canoe Slalom_World Ranking_JSON Output.json';
-            const medalistFilePath = 'data/world_ranking/Canoe Slalom_World Ranking_Medalists_JSON Output.json';
+            const rankingFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/world_ranking/Canoe%20Slalom_World%20Ranking_JSON%20Output.json';
+            const medalistFilePath = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/world_ranking/Canoe%20Slalom_World%20Ranking_Medalists_JSON%20Output.json';
             
             try {
                 const [rankingResponse, medalistResponse] = await Promise.all([
@@ -149,21 +137,31 @@
                 rankingData = await rankingResponse.json();
                 medalistData = await medalistResponse.json();
                 
-                // Hide loading and show dashboard
-                document.getElementById('loading-state').classList.add('hidden');
-                document.getElementById('dashboard-content').classList.remove('hidden');
-                
-                showMessage('Data loaded successfully!', false);
-                populateClassFilter();
-
+                checkDataReady();
             } catch (error) {
                 console.error("Data loading error:", error);
-                showMessage(error.message, true);
-                document.getElementById('loading-state').innerHTML = `<p class="text-lg text-feedback-error">Error loading data. Please check the console and file paths.</p>`;
+                document.getElementById('loading-state').innerHTML = `<p class="text-lg text-feedback-error">Failed to load data. Please check the file paths and ensure the repository is public.<br><b>Error:</b> ${error.message}</p>`;
             }
         }
 
-        // --- FILTER POPULATION ---
+        function checkDataReady() {
+            const hasYOB = rankingData.length > 0 && (rankingData[0].YOB !== undefined || rankingData[0]['Year of Birth'] !== undefined);
+            
+            if (hasYOB) {
+                rankingData = rankingData.map(d => ({...d, Age: parseInt(d.Year) - parseInt(d.YOB || d['Year of Birth']) }));
+                document.getElementById('tab-age').disabled = false;
+                document.getElementById('age-tab-warning').classList.add('hidden');
+            } else {
+                document.getElementById('tab-age').disabled = true;
+                document.getElementById('age-tab-warning').classList.remove('hidden');
+            }
+
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            populateClassFilter();
+            showMessage('Data loaded successfully!', false);
+        }
+        
         function populateClassFilter() {
             const classSelect = document.getElementById('class-select');
             const classes = [...new Set(rankingData.map(item => item.Class))].sort();
@@ -207,13 +205,26 @@
             }
         }
 
-        // --- CHART LOGIC ---
-        function calculateMedalistTrajectory(selectedClass) {
+        function updateMedalistDisplay(names) {
+            const container = document.getElementById('medalist-names-container');
+            const list = document.getElementById('medalist-names-list');
+            const showMedalistAvg = document.getElementById('medalist-toggle').checked;
+
+            if (names.length > 0 && showMedalistAvg) {
+                list.textContent = names.join(', ');
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function calculateMedalistTrajectoryByRelease(selectedClass) {
             const medalistsForClass = medalistData.filter(m => m.Class === selectedClass && (m.Year === '2021' || m.Year === '2024'));
-            if (medalistsForClass.length === 0) return null;
+            if (medalistsForClass.length === 0) { updateMedalistDisplay([]); return null; }
 
             const allTrajectories = [];
             let maxLength = 0;
+            const includedMedalists = [];
 
             for (const medalist of medalistsForClass) {
                 const medalistHistory = rankingData
@@ -223,12 +234,12 @@
                 
                 if (medalistHistory.length > 0) {
                     allTrajectories.push(medalistHistory);
-                    if (medalistHistory.length > maxLength) {
-                        maxLength = medalistHistory.length;
-                    }
+                    includedMedalists.push(medalist.Athlete);
+                    if (medalistHistory.length > maxLength) maxLength = medalistHistory.length;
                 }
             }
-
+            
+            updateMedalistDisplay(includedMedalists);
             if (allTrajectories.length === 0) return null;
 
             const averagedTrajectory = [];
@@ -242,21 +253,62 @@
                         count++;
                     }
                 }
-                if (count > 0) {
-                    averagedTrajectory.push(sumOfRanks / count);
-                } else {
-                    averagedTrajectory.push(null);
-                }
+                averagedTrajectory.push(count > 0 ? sumOfRanks / count : null);
             }
-            
             return averagedTrajectory.reverse();
         }
 
+        function calculateMedalistTrajectoryByAge(selectedClass) {
+            const medalistsForClass = medalistData.filter(m => m.Class === selectedClass && (m.Year === '2021' || m.Year === '2024'));
+            if (medalistsForClass.length === 0) { updateMedalistDisplay([]); return null; }
+
+            const trajectoriesByAge = new Map();
+            const includedMedalists = [];
+            let maxAge = 0;
+
+            for (const medalist of medalistsForClass) {
+                const medalistHistory = rankingData
+                    .filter(r => r.Athlete === medalist.Athlete && r.Class === selectedClass && r.Age && parseInt(r.Year) <= parseInt(medalist.Year))
+                    .sort((a, b) => a.Age - b.Age || parseInt(a['Ranking Release']) - parseInt(b['Ranking Release']));
+
+                if (medalistHistory.length > 0) {
+                    includedMedalists.push(medalist.Athlete);
+                    medalistHistory.forEach(r => {
+                        if (!trajectoriesByAge.has(r.Age)) trajectoriesByAge.set(r.Age, []);
+                        trajectoriesByAge.get(r.Age).push(parseInt(r.Rank));
+                        if (r.Age > maxAge) maxAge = r.Age;
+                    });
+                }
+            }
+            
+            updateMedalistDisplay(includedMedalists);
+            if (includedMedalists.length === 0) return null;
+            
+            const ageLabels = Array.from({ length: maxAge + 1 }, (_, i) => i);
+            const averagedTrajectory = ageLabels.map(age => {
+                if (trajectoriesByAge.has(age)) {
+                    const ranks = trajectoriesByAge.get(age);
+                    return ranks.reduce((a, b) => a + b, 0) / ranks.length;
+                }
+                return null;
+            });
+
+            return { labels: ageLabels, data: averagedTrajectory };
+        }
+
         function updateChart() {
+            if (currentViewMode === 'release') {
+                updateChartByRelease();
+            } else {
+                updateChartByAge();
+            }
+        }
+
+        function updateChartByRelease() {
             const selectedClass = document.getElementById('class-select').value;
             const selectedAthlete = document.getElementById('athlete-select').value;
             const showMedalistAvg = document.getElementById('medalist-toggle').checked;
-
+            document.getElementById('medalist-names-container').classList.add('hidden');
             if (!selectedClass || !selectedAthlete) return;
 
             const athleteData = rankingData
@@ -265,24 +317,14 @@
 
             const labels = athleteData.map(d => `${d.Year} R${d['Ranking Release']}`);
             const ranks = athleteData.map(d => parseInt(d.Rank));
-            
-            const datasets = [];
-
-            // Dataset for the selected athlete
-            datasets.push({
-                type: 'line',
-                label: `${selectedAthlete}'s World Ranking`,
-                data: ranks,
-                borderColor: 'var(--brand-teal)',
-                backgroundColor: 'var(--brand-teal)',
-                tension: 0.1,
-                pointRadius: 5,
-                pointHoverRadius: 8,
-                order: 2
-            });
+            const datasets = [{
+                type: 'line', label: `${selectedAthlete}'s World Ranking`, data: ranks,
+                borderColor: 'var(--brand-teal)', backgroundColor: 'var(--brand-teal)',
+                tension: 0.1, pointRadius: 5, pointHoverRadius: 8, order: 2
+            }];
 
             if (showMedalistAvg) {
-                const avgTrajectory = calculateMedalistTrajectory(selectedClass);
+                const avgTrajectory = calculateMedalistTrajectoryByRelease(selectedClass);
                 if (avgTrajectory) {
                     let alignedTrajectoryData;
                     if (avgTrajectory.length > labels.length) {
@@ -291,62 +333,90 @@
                         const padding = new Array(labels.length - avgTrajectory.length).fill(null);
                         alignedTrajectoryData = [...padding, ...avgTrajectory];
                     }
-
                     datasets.push({
-                        type: 'line',
-                        label: `Avg. Medalist Trajectory`,
-                        data: alignedTrajectoryData,
-                        borderColor: 'rgba(239, 68, 68, 0.8)',
-                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                        borderWidth: 3,
-                        borderDash: [10, 5],
-                        pointRadius: 0,
-                        tension: 0.1,
-                        order: 1 
+                        type: 'line', label: `Avg. Medalist Trajectory`, data: alignedTrajectoryData,
+                        borderColor: 'rgba(239, 68, 68, 0.8)', backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderWidth: 3, borderDash: [10, 5], pointRadius: 0, tension: 0.1, order: 1 
                     });
                 }
             }
+            drawChart({ labels, datasets, xAxisTitle: 'Year and Ranking Release' });
+        }
+        
+        function updateChartByAge() {
+            const selectedClass = document.getElementById('class-select').value;
+            const selectedAthlete = document.getElementById('athlete-select').value;
+            const showMedalistAvg = document.getElementById('medalist-toggle').checked;
+            document.getElementById('medalist-names-container').classList.add('hidden');
+            if (!selectedClass || !selectedAthlete) return;
+
+            const athleteData = rankingData
+                .filter(item => item.Class === selectedClass && item.Athlete === selectedAthlete && item.Age)
+                .sort((a, b) => a.Age - b.Age || parseInt(a['Ranking Release']) - parseInt(b['Ranking Release']));
             
-            drawChart({ labels, datasets });
+            const athleteAgeMap = new Map();
+            athleteData.forEach(d => {
+                if (!athleteAgeMap.has(d.Age)) athleteAgeMap.set(d.Age, []);
+                athleteAgeMap.get(d.Age).push(parseInt(d.Rank));
+            });
+
+            let labels = [...athleteAgeMap.keys()].sort((a, b) => a - b);
+            const ranks = labels.map(age => {
+                const ageRanks = athleteAgeMap.get(age);
+                return Math.min(...ageRanks);
+            });
+            
+            const datasets = [{
+                type: 'line', label: `${selectedAthlete}'s Best World Ranking`, data: ranks,
+                borderColor: 'var(--brand-teal)', backgroundColor: 'var(--brand-teal)',
+                tension: 0.1, pointRadius: 5, pointHoverRadius: 8, order: 2
+            }];
+
+            if (showMedalistAvg) {
+                const medalistInfo = calculateMedalistTrajectoryByAge(selectedClass);
+                if (medalistInfo) {
+                    const masterLabels = [...new Set([...labels, ...medalistInfo.labels])].sort((a, b) => a - b);
+                    const athleteRanksOnMaster = masterLabels.map(age => {
+                        if (athleteAgeMap.has(age)) {
+                            const ageRanks = athleteAgeMap.get(age);
+                            return Math.min(...ageRanks);
+                        }
+                        return null;
+                    });
+                    const medalistRanksOnMaster = masterLabels.map(age => medalistInfo.data[age] || null);
+                    
+                    datasets[0].data = athleteRanksOnMaster;
+                    datasets.push({
+                        type: 'line', label: `Avg. Medalist Trajectory`, data: medalistRanksOnMaster,
+                        borderColor: 'rgba(239, 68, 68, 0.8)', backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderWidth: 3, borderDash: [10, 5], pointRadius: 0, tension: 0.1, order: 1 
+                    });
+                    labels = masterLabels;
+                }
+            }
+            drawChart({ labels, datasets, xAxisTitle: 'Athlete Age' });
         }
 
         function drawChart(chartConfig) {
-            const { labels, datasets } = chartConfig;
+            const { labels, datasets, xAxisTitle } = chartConfig;
             const maxRankFromData = Math.max(...datasets.flatMap(ds => ds.data).filter(d => d !== null));
             const maxRank = Math.max(maxRankFromData, 110);
-
-            const backgroundColors = labels.map(l => parseInt(l.split(' ')[0]) % 2 === 0 ? 'rgba(230, 230, 230, 0.4)' : 'rgba(0, 0, 0, 0)');
-            const shadingDataset = {
-                type: 'bar',
-                label: 'Year Shading',
-                data: labels.map(() => maxRank),
-                backgroundColor: backgroundColors,
-                barPercentage: 1.0,
-                categoryPercentage: 1.0,
-                order: 3,
-                hidden: true,
-                tooltips: { enabled: false }
-            };
-
-            const finalDatasets = [shadingDataset, ...datasets];
 
             const ctx = document.getElementById('ranking-chart').getContext('2d');
             if (myChart) myChart.destroy();
             
             myChart = new Chart(ctx, {
-                data: { labels, datasets: finalDatasets },
+                type: 'line',
+                data: { labels, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: true,
                     scales: {
                         y: { reverse: false, title: { display: true, text: 'World Rank' }, min: 0, max: maxRank },
-                        x: { title: { display: true, text: 'Year and Ranking Release' }, stacked: true }
+                        x: { title: { display: true, text: xAxisTitle } }
                     },
                     plugins: {
                         legend: { labels: { filter: (item) => item.datasetIndex !== 0 } },
-                        tooltip: {
-                            filter: (item) => item.dataset.order !== 3,
-                            callbacks: { label: context => `Rank ${context.parsed.y.toFixed(1)}` }
-                        },
+                        tooltip: { callbacks: { label: context => `${currentViewMode === 'age' ? 'Best ' : ''}Rank ${context.parsed.y.toFixed(1)}` } },
                         annotation: {
                             annotations: {
                                 top20: { type: 'line', yMin: 20, yMax: 20, borderColor: 'rgba(255, 99, 132, 0.8)', borderWidth: 2, borderDash: [6, 6], label: { content: 'Top 20', enabled: true, position: 'start', backgroundColor: 'rgba(255, 99, 132, 0.8)', font: { weight: 'bold' } } },
@@ -359,10 +429,12 @@
             });
         }
         
-        // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadInitialData(); // Fetch data automatically on page load
+            loadInitialData();
             
+            document.getElementById('tab-release').addEventListener('click', () => switchTab('release'));
+            document.getElementById('tab-age').addEventListener('click', () => switchTab('age'));
+
             document.getElementById('class-select').addEventListener('change', e => populateAthleteFilter(e.target.value));
             document.getElementById('athlete-search').addEventListener('input', e => populateAthleteFilter(document.getElementById('class-select').value, e.target.value));
             document.getElementById('athlete-select').addEventListener('change', updateChart);
@@ -370,11 +442,19 @@
             document.getElementById('reset-zoom-btn').addEventListener('click', () => myChart?.resetZoom());
         });
 
-        // --- UTILITY FUNCTIONS ---
+        function switchTab(mode) {
+            currentViewMode = mode;
+            document.getElementById('tab-release').classList.toggle('active', mode === 'release');
+            document.getElementById('tab-age').classList.toggle('active', mode === 'age');
+            document.getElementById('tab-release').classList.toggle('text-gray-500', mode !== 'release');
+            document.getElementById('tab-age').classList.toggle('text-gray-500', mode !== 'age');
+            updateChart();
+        }
+
         function showMessage(message, isError = true) {
             const box = document.getElementById('message-box');
             box.textContent = message;
-            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50'; // Adjusted top position
+            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
             box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
             box.classList.remove('hidden', 'opacity-0');
             setTimeout(() => {

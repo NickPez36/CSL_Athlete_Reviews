@@ -24,16 +24,11 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .active-view-btn { background-color: var(--brand-teal); color: white; }
         .inactive-view-btn { background-color: #e5e7eb; color: #4b5563; }
-        .active-team-btn { background-color: var(--brand-dark-blue); color: white; border-color: var(--brand-dark-blue); }
-        .tooltip { visibility: hidden; opacity: 0; transition: opacity 0.3s; }
-        .has-tooltip:hover .tooltip { visibility: visible; opacity: 1; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--brand-teal); animation: spin 1s ease infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-neutral-light-gray">
-
-    <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
 
     <div class="min-h-screen flex flex-col">
         <nav class="bg-brand-dark-blue shadow-lg">
@@ -46,8 +41,8 @@
                         <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
                     </div>
                     <div>
-                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                        <a href="#" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="#" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                     </div>
                 </div>
             </div>
@@ -93,11 +88,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="team-results-container">
-                            <div id="team-initial-message" class="text-center text-gray-500 py-12">
+                        <div id="team-results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div id="team-initial-message" class="text-center text-gray-500 py-12 col-span-full">
                                 <p>Please select filters to view team results.</p>
                             </div>
-                            <div id="team-results-card" class="hidden"></div>
                         </div>
                     </div>
 
@@ -148,22 +142,26 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION ---
             const CSV_URL = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/kayak_cross/JNR_U23_CSLX_Database.csv';
 
-            const loader = document.getElementById('loader');
-            const mainApp = document.getElementById('main-app');
+            // --- DOM ELEMENTS ---
             const loadingState = document.getElementById('loading-state');
+            const mainApp = document.getElementById('main-app');
             
+            // Tabs
             const teamTabBtn = document.getElementById('team-review-btn');
             const athleteTabBtn = document.getElementById('athlete-review-btn');
             const teamSection = document.getElementById('team-review-section');
             const athleteSection = document.getElementById('athlete-review-section');
             
+            // Team Review Elements
             const teamCompetitionSelect = document.getElementById('team-competition-select');
             const teamNationSelect = document.getElementById('team-nation-select');
-            const teamResultsCard = document.getElementById('team-results-card');
+            const teamResultsContainer = document.getElementById('team-results-container');
             const teamInitialMessage = document.getElementById('team-initial-message');
 
+            // Athlete Review Elements
             const athleteCompetitionSelect = document.getElementById('athlete-competition-select');
             const athleteNationSelect = document.getElementById('athlete-nation-select');
             const athleteYearSelect = document.getElementById('athlete-year-select');
@@ -172,6 +170,7 @@
 
             let allData = [];
 
+            // --- CSV PARSER ---
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().split(/\r?\n/);
                 if (lines.length < 2) return [];
@@ -205,11 +204,14 @@
                             entry[header] = values[index].trim().replace(/^"|"$/g, '');
                         });
                         data.push(entry);
+                    } else {
+                        console.warn(`Skipping malformed CSV line:`, line);
                     }
                 }
                 return data;
             };
 
+            // --- DATA FETCHING ---
             const fetchData = async () => {
                 try {
                     const response = await fetch(CSV_URL);
@@ -224,6 +226,7 @@
                 }
             };
 
+            // --- INITIALIZATION ---
             const initializeApp = () => {
                 loadingState.classList.add('hidden');
                 mainApp.classList.remove('hidden');
@@ -232,6 +235,7 @@
                 toggleMainView('team');
             };
 
+            // --- EVENT HANDLING ---
             const setupEventListeners = () => {
                 teamTabBtn.addEventListener('click', () => toggleMainView('team'));
                 athleteTabBtn.addEventListener('click', () => toggleMainView('athlete'));
@@ -260,27 +264,50 @@
                 }
             };
 
+            // --- TEAM REVIEW LOGIC ---
             const handleTeamCompetitionChange = () => {
-                updateSelect(teamNationSelect, getFilteredNations(teamCompetitionSelect.value));
+                updateSelect(teamNationSelect, getFilteredNations(teamCompetitionSelect.value), '-- Select Nation --');
                 resetTeamResults();
             };
             const handleTeamNationChange = () => {
                 const competition = teamCompetitionSelect.value;
                 const nation = teamNationSelect.value;
                 if (competition && nation) {
-                    const stats = calculateTeamStats(competition, nation);
-                    displayTeamCard(stats, nation, competition);
+                    const baseData = filterData({competition, nation});
+                    
+                    const yearlyData = baseData.reduce((acc, row) => {
+                        const year = row.Year;
+                        if (!acc[year]) acc[year] = [];
+                        acc[year].push(row);
+                        return acc;
+                    }, {});
+
+                    teamResultsContainer.innerHTML = ''; 
+                    teamInitialMessage.classList.add('hidden');
+
+                    const sortedYears = Object.keys(yearlyData).sort((a, b) => b - a);
+
+                    if (sortedYears.length === 0) {
+                        resetTeamResults();
+                        return;
+                    }
+
+                    sortedYears.forEach(year => {
+                        const stats = calculateTeamStats(yearlyData[year]);
+                        const cardHTML = createTeamCardHTML(stats, nation, competition);
+                        teamResultsContainer.innerHTML += cardHTML;
+                    });
+
                 } else {
                     resetTeamResults();
                 }
             };
-            const calculateTeamStats = (competition, nation) => {
-                const baseData = filterData({competition, nation});
-                const profiles = buildAthleteProfiles(baseData);
+            const calculateTeamStats = (yearData) => {
+                const profiles = buildAthleteProfiles(yearData);
                 if (Object.keys(profiles).length === 0) return null;
 
-                const year = baseData.length > 0 ? baseData[0].Year : '';
-                const location = baseData.length > 0 ? baseData[0].Location : '';
+                const year = yearData.length > 0 ? yearData[0].Year : '';
+                const location = yearData.length > 0 ? yearData[0].Location : '';
                 
                 let starting = 0, heats = 0, quarters = 0, semis = 0, finals = 0, medalists = 0;
                 let ttImprovers = 0, bracketImprovers = 0;
@@ -317,20 +344,17 @@
                     bracketPerformance: { improvedCount: bracketImprovers, totalInBrackets: bracketAthletes.length, percentage: getPerc(bracketImprovers, bracketAthletes.length) }
                 };
             };
-            const displayTeamCard = (stats, nation, competition) => {
-                if (!stats) return;
-                teamInitialMessage.classList.add('hidden');
-                teamResultsCard.classList.remove('hidden');
+            const createTeamCardHTML = (stats, nation, competition) => {
+                if (!stats) return '';
                 const compTitle = competition === 'All' ? 'Junior & U23 Worlds' : competition;
                 const createStatRow = (label, stat, color) => `<li class="group flex justify-between items-center p-3 bg-gray-50 rounded-lg transition-all duration-200 hover:bg-${color}-50"><span class="font-medium text-gray-700">${label}</span><div class="relative h-6 w-20 text-right"><span class="absolute inset-0 font-bold text-lg text-${color}-600 transition-opacity duration-300 ease-in-out group-hover:opacity-0">${stat.count}</span><span class="absolute inset-0 font-bold text-lg text-${color}-700 transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100">${stat.perc}%</span></div></li>`;
-                teamResultsCard.innerHTML = `<div class="bg-white rounded-xl shadow-lg p-6 max-w-md mx-auto"><div class="text-center mb-6"><p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">${stats.year || ''} - ${stats.location || ''}</p><h3 class="text-2xl font-bold text-gray-800 mt-1">${nation}</h3><p class="text-sm text-gray-500 font-medium">${compTitle}</p></div><ul class="space-y-2"><li class="flex justify-between items-center p-3 bg-gray-100 rounded-lg"><span class="font-semibold text-gray-800">Starting Athletes</span><span class="font-bold text-lg text-blue-600">${stats.starting}</span></li>${createStatRow('Heats', stats.heats, 'cyan')}${createStatRow('Quarter-Finals', stats.quarterFinal, 'teal')}${createStatRow('Semi-Finals', stats.semiFinal, 'emerald')}${createStatRow('Finals', stats.final, 'green')}<li class="group flex justify-between items-center p-3 bg-yellow-50 rounded-lg transition-all duration-200 hover:bg-yellow-100 border border-yellow-200"><span class="font-medium text-gray-700">Medalists</span><div class="relative h-6 w-20 text-right"><span class="absolute inset-0 font-bold text-lg text-yellow-600 transition-opacity duration-300 ease-in-out group-hover:opacity-0">${stats.medalists.count}</span><span class="absolute inset-0 font-bold text-lg text-yellow-700 transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100">${stats.medalists.perc}%</span></div></li></ul><div class="mt-4 pt-4 border-t border-gray-200 space-y-3"><div class="bg-green-50 p-3 rounded-lg text-center"><p class="text-lg font-bold text-green-700">${stats.timeTrialPerformance.percentage}%</p><p class="text-xs font-medium text-gray-600">${stats.timeTrialPerformance.improvedCount} of ${stats.starting} athletes improved rank in Time Trial</p></div><div class="bg-green-50 p-3 rounded-lg text-center"><p class="text-lg font-bold text-green-700">${stats.bracketPerformance.percentage}%</p><p class="text-xs font-medium text-gray-600">${stats.bracketPerformance.improvedCount} of ${stats.bracketPerformance.totalInBrackets} athletes in brackets improved on seeding</p></div></div></div>`;
+                return `<div class="bg-white rounded-xl shadow-lg p-6"><div class="text-center mb-6"><p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">${stats.year || ''} - ${stats.location || ''}</p><h3 class="text-2xl font-bold text-gray-800 mt-1">${nation}</h3><p class="text-sm text-gray-500 font-medium">${compTitle}</p></div><ul class="space-y-2"><li class="flex justify-between items-center p-3 bg-gray-100 rounded-lg"><span class="font-semibold text-gray-800">Starting Athletes</span><span class="font-bold text-lg text-blue-600">${stats.starting}</span></li>${createStatRow('Heats', stats.heats, 'cyan')}${createStatRow('Quarter-Finals', stats.quarterFinal, 'teal')}${createStatRow('Semi-Finals', stats.semiFinal, 'emerald')}${createStatRow('Finals', stats.final, 'green')}<li class="group flex justify-between items-center p-3 bg-yellow-50 rounded-lg transition-all duration-200 hover:bg-yellow-100 border border-yellow-200"><span class="font-medium text-gray-700">Medalists</span><div class="relative h-6 w-20 text-right"><span class="absolute inset-0 font-bold text-lg text-yellow-600 transition-opacity duration-300 ease-in-out group-hover:opacity-0">${stats.medalists.count}</span><span class="absolute inset-0 font-bold text-lg text-yellow-700 transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100">${stats.medalists.perc}%</span></div></li></ul><div class="mt-4 pt-4 border-t border-gray-200 space-y-3"><div class="bg-green-50 p-3 rounded-lg text-center"><p class="text-lg font-bold text-green-700">${stats.timeTrialPerformance.percentage}%</p><p class="text-xs font-medium text-gray-600">${stats.timeTrialPerformance.improvedCount} of ${stats.starting} athletes improved rank in Time Trial</p></div><div class="bg-green-50 p-3 rounded-lg text-center"><p class="text-lg font-bold text-green-700">${stats.bracketPerformance.percentage}%</p><p class="text-xs font-medium text-gray-600">${stats.bracketPerformance.improvedCount} of ${stats.bracketPerformance.totalInBrackets} athletes in brackets improved on seeding</p></div></div></div>`;
             };
             const resetTeamResults = () => {
-                teamResultsCard.classList.add('hidden');
-                teamInitialMessage.classList.remove('hidden');
-                teamResultsCard.innerHTML = '';
+                teamResultsContainer.innerHTML = `<div id="team-initial-message" class="text-center text-gray-500 py-12 col-span-full"><p>Please select filters to view team results.</p></div>`;
             };
 
+            // --- ATHLETE REVIEW LOGIC ---
             const handleAthleteFilterChange = () => {
                 const competition = athleteCompetitionSelect.value;
                 const nation = athleteNationSelect.value;
@@ -408,6 +432,7 @@
                 athleteInitialMessage.classList.remove('hidden');
             }
 
+            // --- UTILITY & HELPER FUNCTIONS ---
             const getFilteredNations = (competition) => {
                 const data = filterData({competition});
                 return [...new Set(data.map(row => row.Nation))].sort();
@@ -490,20 +515,9 @@
                 return profiles;
             };
 
+            // --- START THE APP ---
             fetchData();
         });
-
-        function showMessage(message, isError = true) {
-            const box = document.getElementById('message-box');
-            box.textContent = message;
-            box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
-            box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
-            box.classList.remove('hidden', 'opacity-0');
-            setTimeout(() => {
-                box.classList.add('opacity-0');
-                setTimeout(() => box.classList.add('hidden'), 300);
-            }, 3000);
-        }
     </script>
 </body>
 </html>

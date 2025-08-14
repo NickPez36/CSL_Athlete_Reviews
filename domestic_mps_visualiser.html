@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canoe Slalom - Domestic MPS Visualiser</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --brand-dark-blue: #0A2B4C; --brand-teal: #0097A7; --brand-light-blue: #4DD0E1; --neutral-white: #FFFFFF; --neutral-light-gray: #F3F4F6; --neutral-text: #1F2937; --feedback-error: #DC2626; --feedback-success: #16A34A; }
@@ -23,6 +24,8 @@
         select:disabled, input:disabled { cursor: not-allowed; background-color: #e9ecef; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--brand-teal); animation: spin 1s ease infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tab-btn.active { border-bottom-color: var(--brand-teal); color: var(--brand-dark-blue); font-weight: 600; }
+        .tab-btn { border-bottom: 2px solid transparent; }
     </style>
 </head>
 <body class="bg-neutral-light-gray">
@@ -49,41 +52,61 @@
 
         <main class="flex-grow">
             <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                <header class="mb-8">
+                <header class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-neutral-text">Domestic MPS Visualiser</h1>
                     <p class="mt-2 text-lg text-gray-600">Analyze athlete performance using domestic competition data.</p>
                 </header>
 
-                <div id="loading-state" class="text-center py-10">
+                <div id="initial-message" class="text-center text-gray-500 p-8">
                     <div class="spinner mx-auto"></div>
-                    <p class="mt-2 text-lg text-gray-500">Loading competition data...</p>
+                    <p class="mt-4">Loading competition data...</p>
                 </div>
 
-                <div id="dashboard-content" class="hidden">
-                    <div id="filtersArea" class="p-6 bg-white rounded-xl shadow-md mb-8">
-                        <h2 class="text-2xl font-bold text-center mb-6 text-brand-dark-blue">Analyze Athlete Performance</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div id="main-content-area" class="hidden">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button id="tab-annual" class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Annual MPS Review</button>
+                            <button id="tab-longitudinal" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Longitudinal MPS Review</button>
+                        </nav>
+                    </div>
+                    
+                    <div id="annual-review-content" class="mt-6">
+                        <div id="filter-section-annual" class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white rounded-xl shadow-md">
                             <div>
                                 <label for="year-select" class="block text-sm font-medium text-gray-700 mb-1">1. Select Year</label>
                                 <select id="year-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
                             </div>
                             <div>
-                                <label for="class-select" class="block text-sm font-medium text-gray-700 mb-1">2. Select Class</label>
-                                <select id="class-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal" disabled></select>
+                                <label for="class-select-annual" class="block text-sm font-medium text-gray-700 mb-1">2. Select Class</label>
+                                <select id="class-select-annual" disabled class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
                             </div>
                             <div>
-                                <label for="athlete-search" class="block text-sm font-medium text-gray-700 mb-1">3. Search/Select Athlete</label>
-                                <input type="text" id="athlete-search" placeholder="Type to search..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal mb-2" disabled>
-                                <select id="athlete-select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal" disabled></select>
+                                <label for="athlete-search-annual" class="block text-sm font-medium text-gray-700 mb-1">3. Search/Select Athlete</label>
+                                <input type="text" id="athlete-search-annual" placeholder="Type to search..." disabled class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal mb-2">
+                                <select id="athlete-select-annual" disabled class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
                             </div>
                         </div>
                     </div>
-                    
-                    <div id="results-container" class="space-y-6">
-                        <div id="initial-message" class="text-center text-gray-500 p-8 bg-white rounded-xl shadow-md">
-                            <p>Please make a selection using the filters above to view performance data.</p>
+
+                    <div id="longitudinal-review-content" class="hidden mt-6">
+                         <div id="filter-section-longitudinal" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white rounded-xl shadow-md">
+                            <div>
+                                <label for="class-select-longitudinal" class="block text-sm font-medium text-gray-700 mb-1">1. Select Class</label>
+                                <select id="class-select-longitudinal" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
+                            </div>
+                            <div>
+                                <label for="athlete-search-longitudinal" class="block text-sm font-medium text-gray-700 mb-1">2. Search/Select Athlete</label>
+                                <input type="text" id="athlete-search-longitudinal" placeholder="Type to search..." disabled class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal mb-2">
+                                <select id="athlete-select-longitudinal" disabled class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-teal focus:border-brand-teal"></select>
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="results-container" class="mt-8 space-y-6">
                         <div id="tables-wrapper"></div>
+                        <div id="chart-container" class="hidden" style="height: 500px;">
+                            <canvas id="mps-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -97,50 +120,105 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        window.onload = function() {
             let allData = [];
             let baseScoreMap = new Map();
+            let mpsChart = null;
+            let athleteNameMap = new Map();
 
             const tablesWrapper = document.getElementById('tables-wrapper');
-            const yearSelect = document.getElementById('year-select');
-            const classSelect = document.getElementById('class-select');
-            const athleteSearch = document.getElementById('athlete-search');
-            const athleteSelect = document.getElementById('athlete-select');
             const initialMessage = document.getElementById('initial-message');
-            const loadingState = document.getElementById('loading-state');
-            const dashboardContent = document.getElementById('dashboard-content');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const chartContainer = document.getElementById('chart-container');
+            const mainContentArea = document.getElementById('main-content-area');
+            
+            const tabAnnual = document.getElementById('tab-annual');
+            const tabLongitudinal = document.getElementById('tab-longitudinal');
+            const annualContent = document.getElementById('annual-review-content');
+            const longitudinalContent = document.getElementById('longitudinal-review-content');
 
-            const DATA_FILE_PATH = 'data/mps_calculations/mps_domestic_competition_data.csv';
+            const yearSelect = document.getElementById('year-select');
+            const classSelectAnnual = document.getElementById('class-select-annual');
+            const athleteSearchAnnual = document.getElementById('athlete-search-annual');
+            const athleteSelectAnnual = document.getElementById('athlete-select-annual');
+            
+            const classSelectLongitudinal = document.getElementById('class-select-longitudinal');
+            const athleteSearchLongitudinal = document.getElementById('athlete-search-longitudinal');
+            const athleteSelectLongitudinal = document.getElementById('athlete-select-longitudinal');
+
+            const DATA_FILE_PATH = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/mps_calculations/mps_domestic_competition_data.csv';
             const TARGET_PHASES = new Set(['Heat 1', 'Semi-Final', 'Final']);
             const TARGET_CLASSES = new Set(['K1M', 'K1W', 'C1M', 'C1W']);
             const KEY_DELIMITER = '||';
             const BENCHMARKS = { 'K1M': 94.44, 'K1W': 108.14, 'C1M': 101.48, 'C1W': 119.70 };
+            
+            const WORLD_CHAMP_ATHLETES = {
+                'K1M': new Set(['Lucien Delfour', 'Timothy Anderson', 'Benjamin Pope', 'Daniel Watkins']),
+                'K1W': new Set(['Jessica Fox', 'Noemie Fox', 'Kate Eckhardt', 'Rosalyn Lawrence']),
+                'C1M': new Set(['Tristan Carter', 'Daniel Watkins', 'Brodie Crawford', 'Benjamin Ross', 'Ian Borrows']),
+                'C1W': new Set(['Jessica Fox', 'Noemie Fox', 'Kate Eckhardt', 'Rosalyn Lawrence'])
+            };
 
+            tabAnnual.addEventListener('click', () => switchTab('annual'));
+            tabLongitudinal.addEventListener('click', () => switchTab('longitudinal'));
             yearSelect.addEventListener('change', handleYearChange);
-            classSelect.addEventListener('change', handleClassChange);
-            athleteSearch.addEventListener('input', handleAthleteSearch);
-            athleteSelect.addEventListener('change', handleAthleteSelectChange);
+            classSelectAnnual.addEventListener('change', handleClassChangeAnnual);
+            athleteSearchAnnual.addEventListener('input', handleAthleteSearchAnnual);
+            athleteSelectAnnual.addEventListener('change', handleAthleteSelectChangeAnnual);
+            classSelectLongitudinal.addEventListener('change', handleClassChangeLongitudinal);
+            athleteSearchLongitudinal.addEventListener('input', handleAthleteSearchLongitudinal);
+            athleteSelectLongitudinal.addEventListener('change', handleAthleteSelectChangeLongitudinal);
 
-            loadDataFromRepo();
+            loadAllData();
 
-            async function loadDataFromRepo() {
+            function normalizeAthleteName(name) {
+                if (!name) return '';
+                const cleanedName = name.toUpperCase().replace(/,/g, '');
+                return cleanedName.split(' ').filter(Boolean).sort().join('');
+            }
+
+            async function loadAllData() {
                 try {
                     const response = await fetch(DATA_FILE_PATH);
-                    if (!response.ok) throw new Error(`Could not load data file. Status: ${response.status}.`);
+                    if (!response.ok) throw new Error(`Could not load data file. Status: ${response.status}`);
                     
                     const csvText = await response.text();
                     allData = manualCsvParse(csvText);
-                    const { map } = calculateBaseScores(allData);
-                    baseScoreMap = map;
+                    
+                    allData.forEach(row => {
+                        const originalName = row['Athlete Name'];
+                        const normalized = normalizeAthleteName(originalName);
+                        row.normalizedName = normalized;
+                        if (normalized && !athleteNameMap.has(normalized)) {
+                            athleteNameMap.set(normalized, originalName);
+                        }
+                    });
+
+                    baseScoreMap = calculateBaseScores(allData);
                     
                     populateYearFilter(allData);
-                    loadingState.classList.add('hidden');
-                    dashboardContent.classList.remove('hidden');
+                    populateClassFilterLongitudinal(allData);
+
+                    document.getElementById('loading-state').classList.add('hidden');
+                    mainContentArea.classList.remove('hidden');
+                    
                     showMessage('Data loaded successfully. Select filters to begin.', false);
                 } catch (error) {
-                    loadingState.innerHTML = `<p class="text-lg text-feedback-error">Failed to load data file. Please ensure the file exists at '${DATA_FILE_PATH}'.<br><b>Error:</b> ${error.message}</p>`;
-                    console.error("Data loading failed:", error);
+                    document.getElementById('loading-state').innerHTML = `<p class="text-lg text-feedback-error">${error.message}</p>`;
                 }
+            }
+            
+            function switchTab(tabName) {
+                const isActive = tabName === 'annual';
+                tabAnnual.classList.toggle('active', isActive);
+                tabLongitudinal.classList.toggle('active', !isActive);
+                
+                annualContent.classList.toggle('hidden', !isActive);
+                longitudinalContent.classList.toggle('hidden', isActive);
+
+                tablesWrapper.innerHTML = '';
+                chartContainer.classList.add('hidden');
+                if(mpsChart) mpsChart.destroy();
             }
 
             function manualCsvParse(csvText) {
@@ -169,39 +247,30 @@
                         if (!row.Year || !row.Competition || isNaN(totalTime)) continue;
                         const groupKey = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
                         if (!firstPlaceTimes[groupKey]) {
-                            firstPlaceTimes[groupKey] = { year: row.Year, competition: row.Competition, phase: row.Phase, classTimes: {} };
+                            firstPlaceTimes[groupKey] = { classTimes: {} };
                         }
                         firstPlaceTimes[groupKey].classTimes[row.Class] = totalTime;
                     }
                 }
-                const scores = [];
                 const map = new Map();
                 for (const key in firstPlaceTimes) {
                     const group = firstPlaceTimes[key];
                     if (Object.keys(group.classTimes).length === TARGET_CLASSES.size) {
                         let sumOfTimes = 0;
                         TARGET_CLASSES.forEach(c => { sumOfTimes += group.classTimes[c]; });
-                        const baseScore = (sumOfTimes / TARGET_CLASSES.size).toFixed(2);
-                        scores.push({ ...group, baseScore });
-                        map.set(key, baseScore);
+                        map.set(key, (sumOfTimes / TARGET_CLASSES.size).toFixed(2));
                     }
                 }
-                const bFinalsToCreate = new Set();
                 data.forEach(row => {
                     if (row.Phase === 'Semi-Final B' || row.Phase === 'Final B') {
-                        bFinalsToCreate.add(`${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`);
+                         const mainPhaseKey = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase.replace(' B', '')}`;
+                         const bFinalKey = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
+                         if(map.has(mainPhaseKey) && !map.has(bFinalKey)) {
+                             map.set(bFinalKey, map.get(mainPhaseKey));
+                         }
                     }
                 });
-                bFinalsToCreate.forEach(bFinalKey => {
-                    const mainPhaseKey = bFinalKey.replace(' B', '');
-                    const baseScore = map.get(mainPhaseKey);
-                    if (baseScore) {
-                        const [year, competition, phase] = bFinalKey.split(KEY_DELIMITER);
-                        scores.push({ year, competition, phase, baseScore });
-                        map.set(bFinalKey, baseScore);
-                    }
-                });
-                return { scores, map };
+                return map;
             }
 
             function populateYearFilter(data) {
@@ -210,59 +279,318 @@
             }
 
             function handleYearChange() {
-                resetSelect(classSelect, "Select a class...");
-                resetSelect(athleteSelect, "Select an athlete...");
-                athleteSearch.value = '';
-                athleteSearch.disabled = true;
+                resetSelect(classSelectAnnual, "Select a class...");
+                resetSelect(athleteSelectAnnual, "Select an athlete...");
+                athleteSearchAnnual.value = '';
+                athleteSearchAnnual.disabled = true;
                 tablesWrapper.innerHTML = '';
-                initialMessage.classList.remove('hidden');
                 const selectedYear = yearSelect.value;
                 if (selectedYear && selectedYear !== "Select a year...") {
                     const classes = [...new Set(allData.filter(row => row.Year === selectedYear).map(row => row.Class))].sort();
-                    populateSelect(classSelect, classes, "Select a class...");
-                    classSelect.disabled = false;
+                    populateSelect(classSelectAnnual, classes, "Select a class...");
+                    classSelectAnnual.disabled = false;
                 }
             }
 
-            function handleClassChange() {
-                resetSelect(athleteSelect, "Select an athlete...");
-                athleteSearch.value = '';
+            function handleClassChangeAnnual() {
+                resetSelect(athleteSelectAnnual, "Select an athlete...");
+                athleteSearchAnnual.value = '';
                 tablesWrapper.innerHTML = '';
-                initialMessage.classList.remove('hidden');
                 const selectedYear = yearSelect.value;
-                const selectedClass = classSelect.value;
+                const selectedClass = classSelectAnnual.value;
                 if (selectedClass && selectedClass !== "Select a class...") {
-                    const athletes = [...new Set(allData.filter(row => row.Year === selectedYear && row.Class === selectedClass).map(row => row['Athlete Name']))].sort();
-                    populateSelect(athleteSelect, athletes, "Select an athlete...");
-                    athleteSelect.disabled = false;
-                    athleteSearch.disabled = false;
+                    const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Year === selectedYear && row.Class === selectedClass).map(row => row.normalizedName))];
+                    const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName)).sort();
+                    populateSelect(athleteSelectAnnual, athletes, "Select an athlete...");
+                    athleteSelectAnnual.disabled = false;
+                    athleteSearchAnnual.disabled = false;
                 } else {
-                    athleteSearch.disabled = true;
+                    athleteSearchAnnual.disabled = true;
                 }
             }
             
-            function handleAthleteSearch() {
-                const searchTerm = athleteSearch.value.toLowerCase();
+            function handleAthleteSearchAnnual() {
+                const searchTerm = athleteSearchAnnual.value.toLowerCase();
                 const selectedYear = yearSelect.value;
-                const selectedClass = classSelect.value;
-                const athletes = [...new Set(allData.filter(row => row.Year === selectedYear && row.Class === selectedClass).map(row => row['Athlete Name']))];
+                const selectedClass = classSelectAnnual.value;
+                const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Year === selectedYear && row.Class === selectedClass).map(row => row.normalizedName))];
+                const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName));
                 const filteredAthletes = athletes.filter(name => name.toLowerCase().includes(searchTerm)).sort();
-                populateSelect(athleteSelect, filteredAthletes, "Select an athlete...");
+                populateSelect(athleteSelectAnnual, filteredAthletes, "Select an athlete...");
             }
 
-            function handleAthleteSelectChange() {
-                const selectedAthlete = athleteSelect.value;
+            function handleAthleteSelectChangeAnnual() {
+                const selectedAthlete = athleteSelectAnnual.value;
                 if (selectedAthlete && selectedAthlete !== "Select an athlete...") {
-                    initialMessage.classList.add('hidden');
-                    displayAthletePerformanceTable(yearSelect.value, classSelect.value, selectedAthlete);
+                    displayAthletePerformanceTable(yearSelect.value, classSelectAnnual.value, selectedAthlete);
                 } else {
                     tablesWrapper.innerHTML = '';
-                    initialMessage.classList.remove('hidden');
+                }
+            }
+            
+            function displayAthletePerformanceTable(year, eventClass, athleteName) {
+                const normalizedNameToFind = normalizeAthleteName(athleteName);
+                const athleteData = allData.filter(row => row.Year === year && row.Class === eventClass && row.normalizedName === normalizedNameToFind);
+                const perfRows = [];
+                const benchmark = BENCHMARKS[eventClass];
+
+                athleteData.forEach(row => {
+                    const key = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
+                    const baseScore = baseScoreMap.get(key);
+                    const athleteTime = parseFloat(row['Total Time']);
+                    if (baseScore && !isNaN(athleteTime)) {
+                        const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
+                        const colorClass = performance < benchmark ? 'text-green-600 font-bold' : 'text-gray-900';
+                        perfRows.push([
+                            row.Competition,
+                            row.Phase,
+                            athleteTime.toFixed(2),
+                            baseScore,
+                            `<span class="${colorClass}">${performance}%</span>`
+                        ]);
+                    }
+                });
+
+                if (perfRows.length > 0) {
+                    const headers = ['Competition', 'Phase', 'Athlete Time', 'Base Score', 'Performance Standard'];
+                    displayTable(`Performance Standard for ${athleteName} (${year})`, headers, perfRows);
+                } else {
+                    tablesWrapper.innerHTML = `<div class="text-center text-gray-500 p-8 bg-white rounded-xl shadow-md"><p>No performance data found for ${athleteName} in ${year} for class ${eventClass}.</p></div>`;
+                }
+            }
+
+            function populateClassFilterLongitudinal(data) {
+                 const classes = [...new Set(data.map(row => row.Class))].sort();
+                 populateSelect(classSelectLongitudinal, classes, "Select a class...");
+            }
+
+            function handleClassChangeLongitudinal() {
+                resetSelect(athleteSelectLongitudinal, "Select an athlete...");
+                athleteSearchLongitudinal.value = '';
+                chartContainer.classList.add('hidden');
+                if(mpsChart) mpsChart.destroy();
+                const selectedClass = classSelectLongitudinal.value;
+                if(selectedClass && selectedClass !== "Select a class...") {
+                    const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Class === selectedClass).map(row => row.normalizedName))];
+                    const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName)).sort();
+                    populateSelect(athleteSelectLongitudinal, athletes, "Select an athlete...");
+                    athleteSelectLongitudinal.disabled = false;
+                    athleteSearchLongitudinal.disabled = false;
+                } else {
+                    athleteSearchLongitudinal.disabled = true;
+                }
+            }
+
+            function handleAthleteSearchLongitudinal() {
+                const searchTerm = athleteSearchLongitudinal.value.toLowerCase();
+                const selectedClass = classSelectLongitudinal.value;
+                const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Class === selectedClass).map(row => row.normalizedName))];
+                const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName));
+                const filteredAthletes = athletes.filter(name => name.toLowerCase().includes(searchTerm)).sort();
+                populateSelect(athleteSelectLongitudinal, filteredAthletes, "Select an athlete...");
+            }
+
+            function handleAthleteSelectChangeLongitudinal() {
+                const selectedAthlete = athleteSelectLongitudinal.value;
+                if (selectedAthlete && selectedAthlete !== "Select an athlete...") {
+                    displayLongitudinalChart(selectedAthlete, classSelectLongitudinal.value);
+                } else {
+                    chartContainer.classList.add('hidden');
+                    if(mpsChart) mpsChart.destroy();
+                }
+            }
+
+            function calculatePerformanceBands(eventClass) {
+                const wcAthleteNames = WORLD_CHAMP_ATHLETES[eventClass] || new Set();
+                const normalizedWcNames = new Set([...wcAthleteNames].map(normalizeAthleteName));
+                
+                const bandPerformances = {};
+
+                allData.forEach(row => {
+                    if (row.Class === eventClass && normalizedWcNames.has(row.normalizedName)) {
+                        const penalty = parseInt(row['Total Penalties'], 10);
+                        if (penalty >= 50) return;
+
+                        const yob = parseInt(row['Year of Birth'], 10);
+                        const year = parseInt(row.Year, 10);
+                        const key = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
+                        const baseScore = baseScoreMap.get(key);
+                        const athleteTime = parseFloat(row['Total Time']);
+
+                        if (!isNaN(yob) && !isNaN(year) && baseScore && !isNaN(athleteTime)) {
+                            const age = year - yob;
+                            const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
+                            if (!bandPerformances[age]) {
+                                bandPerformances[age] = [];
+                            }
+                            bandPerformances[age].push(performance);
+                        }
+                    }
+                });
+
+                const q1Data = [];
+                const q3Data = [];
+                for (const age in bandPerformances) {
+                    const performances = bandPerformances[age].sort((a, b) => a - b);
+                    if (performances.length >= 4) {
+                        const q1Index = Math.floor(performances.length / 4);
+                        const q3Index = Math.floor((3 * performances.length) / 4);
+                        q1Data.push({ x: parseInt(age), y: performances[q1Index] });
+                        q3Data.push({ x: parseInt(age), y: performances[q3Index] });
+                    }
+                }
+                q1Data.sort((a, b) => a.x - b.x);
+                q3Data.sort((a, b) => a.x - b.x);
+
+                return { q1Data, q3Data };
+            }
+            
+            function displayLongitudinalChart(athleteName, eventClass) {
+                const normalizedNameToFind = normalizeAthleteName(athleteName);
+                const athleteData = allData.filter(row => row.normalizedName === normalizedNameToFind && row.Class === eventClass);
+                
+                if (athleteData.length === 0) {
+                    tablesWrapper.innerHTML = `<div class="text-center text-red-600 p-6 bg-red-50 rounded-lg border border-red-200"><h3 class="font-semibold">An Error Occurred</h3><p class="mt-2 text-sm">No race data found for ${athleteName} in the selected class.</p></div>`;
+                    return;
+                }
+
+                const chartData = [];
+                let hasYobData = false;
+                
+                athleteData.forEach(row => {
+                    const yob = parseInt(row['Year of Birth'], 10);
+                    const year = parseInt(row.Year, 10);
+                    if (!isNaN(yob)) hasYobData = true;
+                    const key = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
+                    const baseScore = baseScoreMap.get(key);
+                    const athleteTime = parseFloat(row['Total Time']);
+                    if (!isNaN(yob) && !isNaN(year) && baseScore && !isNaN(athleteTime)) {
+                        const age = year - yob;
+                        const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
+                        chartData.push({
+                            x: age, 
+                            y: performance,
+                            competition: row.Competition,
+                            phase: row.Phase
+                        });
+                    }
+                });
+
+                if (chartData.length > 0) {
+                    chartContainer.classList.remove('hidden');
+                    if (mpsChart) mpsChart.destroy();
+
+                    const { q1Data, q3Data } = calculatePerformanceBands(eventClass);
+
+                    const averageData = [];
+                    const groupedByAge = chartData.reduce((acc, point) => {
+                        acc[point.x] = acc[point.x] || [];
+                        acc[point.x].push(point.y);
+                        return acc;
+                    }, {});
+                    for (const age in groupedByAge) {
+                        const values = groupedByAge[age];
+                        const average = values.reduce((a, b) => a + b, 0) / values.length;
+                        averageData.push({x: parseInt(age), y: average});
+                    }
+                    averageData.sort((a,b) => a.x - b.x);
+                    
+                    const ctx = document.getElementById('mps-chart').getContext('2d');
+                    mpsChart = new Chart(ctx, {
+                        data: {
+                            datasets: [{
+                                type: 'line',
+                                label: 'Upper Quartile',
+                                data: q3Data,
+                                borderColor: 'rgba(20, 184, 166, 0.5)',
+                                backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: '+1'
+                            },{
+                                type: 'line',
+                                label: 'Lower Quartile',
+                                data: q1Data,
+                                borderColor: 'rgba(20, 184, 166, 0.5)',
+                                backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                                borderWidth: 1,
+                                pointRadius: 0
+                            },{
+                                type: 'scatter',
+                                label: `${athleteName} - MPS%`,
+                                data: chartData,
+                                backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                                borderColor: 'rgba(37, 99, 235, 1)',
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                order: 1
+                            }, {
+                                type: 'line',
+                                label: 'Average Trend',
+                                data: averageData,
+                                borderColor: 'rgba(220, 38, 38, 1)',
+                                backgroundColor: 'rgba(220, 38, 38, 0.5)',
+                                borderWidth: 2,
+                                tension: 0.1,
+                                pointRadius: 0,
+                                order: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    type: 'linear',
+                                    position: 'bottom',
+                                    title: { display: true, text: 'Age', font: { size: 14, weight: 'bold' } },
+                                    ticks: { stepSize: 1 }
+                                },
+                                y: {
+                                    min: 70,
+                                    max: 150,
+                                    title: { display: true, text: 'MPS Percentage', font: { size: 14, weight: 'bold' } },
+                                    ticks: { callback: function(value) { return value + '%'; } }
+                                }
+                            },
+                            plugins: {
+                                legend: { 
+                                    position: 'top',
+                                    labels: {
+                                        filter: function(item) {
+                                            return !item.text.includes('Quartile');
+                                        }
+                                    }
+                                },
+                                title: { display: true, text: `Longitudinal Performance for ${athleteName}`, font: { size: 18, weight: 'bold' } },
+                                tooltip: { 
+                                    callbacks: { 
+                                        label: function(context) {
+                                            if (context.dataset.label.includes('Quartile')) return null;
+                                            const point = context.raw;
+                                            return [
+                                                `MPS: ${point.y.toFixed(2)}%`,
+                                                `Age: ${point.x}`,
+                                                `Race: ${point.competition}`,
+                                                `Phase: ${point.phase}`
+                                            ];
+                                        } 
+                                    } 
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    if (!hasYobData) {
+                        tablesWrapper.innerHTML = `<div class="text-center text-red-600 p-6 bg-red-50 rounded-lg border border-red-200"><h3 class="font-semibold">An Error Occurred</h3><p class="mt-2 text-sm">No longitudinal data found for ${athleteName}. Check if 'Year of Birth' is available for this athlete in the data file.</p></div>`;
+                    } else {
+                        tablesWrapper.innerHTML = `<div class="text-center text-red-600 p-6 bg-red-50 rounded-lg border border-red-200"><h3 class="font-semibold">An Error Occurred</h3><p class="mt-2 text-sm">Could not generate a chart for ${athleteName}. This is likely because Base Scores could not be calculated for their competitions.</p></div>`;
+                    }
                 }
             }
 
             function populateSelect(selectElement, options, defaultText) {
-                selectElement.innerHTML = `<option>${defaultText}</option>`;
+                selectElement.innerHTML = `<option value="">${defaultText}</option>`;
                 options.forEach(option => {
                     const opt = document.createElement('option');
                     opt.value = option;
@@ -293,36 +621,6 @@
                 tablesWrapper.appendChild(container);
             }
 
-            function displayAthletePerformanceTable(year, eventClass, athleteName) {
-                const athleteData = allData.filter(row => row.Year === year && row.Class === eventClass && row['Athlete Name'] === athleteName);
-                const perfRows = [];
-                const benchmark = BENCHMARKS[eventClass];
-
-                athleteData.forEach(row => {
-                    const key = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
-                    const baseScore = baseScoreMap.get(key);
-                    const athleteTime = parseFloat(row['Total Time']);
-                    if (baseScore && !isNaN(athleteTime)) {
-                        const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
-                        const colorClass = performance < benchmark ? 'text-green-600 font-bold' : 'text-gray-900';
-                        perfRows.push([
-                            row.Competition,
-                            row.Phase,
-                            athleteTime.toFixed(2),
-                            baseScore,
-                            `<span class="${colorClass}">${performance}%</span>`
-                        ]);
-                    }
-                });
-
-                if (perfRows.length > 0) {
-                    const headers = ['Competition', 'Phase', 'Athlete Time', 'Base Score', 'Performance Standard'];
-                    displayTable(`Performance Standard for ${athleteName} (${year})`, headers, perfRows);
-                } else {
-                    tablesWrapper.innerHTML = `<div class="text-center text-gray-500 p-8 bg-white rounded-xl shadow-md"><p>No performance data found for ${athleteName} in ${year} for class ${eventClass}.</p></div>`;
-                }
-            }
-            
             function showMessage(message, isError = true) {
                 const box = document.getElementById('message-box');
                 box.textContent = message;
@@ -334,7 +632,7 @@
                     setTimeout(() => box.classList.add('hidden'), 300);
                 }, 3000);
             }
-        });
+        };
     </script>
 </body>
 </html>

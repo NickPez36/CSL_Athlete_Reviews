@@ -57,7 +57,8 @@
                     <p class="mt-2 text-lg text-gray-600">Analyze athlete performance using domestic competition data.</p>
                 </header>
 
-                <div id="initial-message" class="text-center text-gray-500 p-8">
+                <!-- *** FIX: Changed ID from "initial-message" to "loading-state" to match script *** -->
+                <div id="loading-state" class="text-center text-gray-500 p-8">
                     <div class="spinner mx-auto"></div>
                     <p class="mt-4">Loading competition data...</p>
                 </div>
@@ -127,8 +128,6 @@
             let athleteNameMap = new Map();
 
             const tablesWrapper = document.getElementById('tables-wrapper');
-            const initialMessage = document.getElementById('initial-message');
-            const loadingSpinner = document.getElementById('loading-spinner');
             const chartContainer = document.getElementById('chart-container');
             const mainContentArea = document.getElementById('main-content-area');
             

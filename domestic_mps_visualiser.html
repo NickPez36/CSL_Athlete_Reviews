@@ -30,9 +30,11 @@
 </head>
 <body class="bg-neutral-light-gray">
 
+    <!-- Message box for notifications -->
     <div id="message-box" class="hidden fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50"></div>
 
     <div class="min-h-screen flex flex-col">
+        <!-- Navigation Bar -->
         <nav class="bg-brand-dark-blue shadow-lg">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20">
@@ -43,13 +45,15 @@
                         <h1 class="text-white text-xl font-semibold">Slalom Analytics Portal</h1>
                     </div>
                     <div>
-                        <a href="dashboard.html" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="index.html" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                        <!-- Note: These links are placeholders -->
+                        <a href="#" class="text-gray-300 hover:bg-brand-teal hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="#" class="text-gray-300 hover:bg-brand-teal hover:text-white ml-4 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                     </div>
                 </div>
             </div>
         </nav>
 
+        <!-- Main Content -->
         <main class="flex-grow">
             <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
                 <header class="text-center mb-8">
@@ -57,13 +61,16 @@
                     <p class="mt-2 text-lg text-gray-600">Analyze athlete performance using domestic competition data.</p>
                 </header>
 
+                <!-- Loading Spinner -->
                 <!-- *** FIX: Changed ID from "initial-message" to "loading-state" to match script *** -->
                 <div id="loading-state" class="text-center text-gray-500 p-8">
                     <div class="spinner mx-auto"></div>
                     <p class="mt-4">Loading competition data...</p>
                 </div>
 
+                <!-- Main application content area, hidden until data is loaded -->
                 <div id="main-content-area" class="hidden">
+                    <!-- Tab Navigation -->
                     <div class="border-b border-gray-200">
                         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                             <button id="tab-annual" class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Annual MPS Review</button>
@@ -71,6 +78,7 @@
                         </nav>
                     </div>
                     
+                    <!-- Annual Review Tab Content -->
                     <div id="annual-review-content" class="mt-6">
                         <div id="filter-section-annual" class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white rounded-xl shadow-md">
                             <div>
@@ -89,6 +97,7 @@
                         </div>
                     </div>
 
+                    <!-- Longitudinal Review Tab Content -->
                     <div id="longitudinal-review-content" class="hidden mt-6">
                          <div id="filter-section-longitudinal" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white rounded-xl shadow-md">
                             <div>
@@ -103,6 +112,7 @@
                         </div>
                     </div>
 
+                    <!-- Container for results (table or chart) -->
                     <div id="results-container" class="mt-8 space-y-6">
                         <div id="tables-wrapper"></div>
                         <div id="chart-container" class="hidden" style="height: 500px;">
@@ -113,6 +123,7 @@
             </div>
         </main>
         
+        <!-- Footer -->
         <footer class="bg-white">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
                  &copy;2025 Paddle Australia. All rights reserved.
@@ -122,11 +133,13 @@
 
     <script>
         window.onload = function() {
+            // Global variables
             let allData = [];
             let baseScoreMap = new Map();
             let mpsChart = null;
-            let athleteNameMap = new Map();
+            let athleteNameMap = new Map(); // Map normalized names to original names
 
+            // DOM Element references
             const tablesWrapper = document.getElementById('tables-wrapper');
             const chartContainer = document.getElementById('chart-container');
             const mainContentArea = document.getElementById('main-content-area');
@@ -145,12 +158,14 @@
             const athleteSearchLongitudinal = document.getElementById('athlete-search-longitudinal');
             const athleteSelectLongitudinal = document.getElementById('athlete-select-longitudinal');
 
+            // --- Configuration ---
             const DATA_FILE_PATH = 'https://raw.githubusercontent.com/NickPez36/CSL_Athlete_Reviews/main/data/mps_calculations/mps_domestic_competition_data.csv';
             const TARGET_PHASES = new Set(['Heat 1', 'Semi-Final', 'Final']);
             const TARGET_CLASSES = new Set(['K1M', 'K1W', 'C1M', 'C1W']);
             const KEY_DELIMITER = '||';
             const BENCHMARKS = { 'K1M': 94.44, 'K1W': 108.14, 'C1M': 101.48, 'C1W': 119.70 };
             
+            // Athlete sets for longitudinal banding
             const WORLD_CHAMP_ATHLETES = {
                 'K1M': new Set(['Lucien Delfour', 'Timothy Anderson', 'Benjamin Pope', 'Daniel Watkins']),
                 'K1W': new Set(['Jessica Fox', 'Noemie Fox', 'Kate Eckhardt', 'Rosalyn Lawrence']),
@@ -158,6 +173,7 @@
                 'C1W': new Set(['Jessica Fox', 'Noemie Fox', 'Kate Eckhardt', 'Rosalyn Lawrence'])
             };
 
+            // --- Event Listeners ---
             tabAnnual.addEventListener('click', () => switchTab('annual'));
             tabLongitudinal.addEventListener('click', () => switchTab('longitudinal'));
             yearSelect.addEventListener('change', handleYearChange);
@@ -168,14 +184,24 @@
             athleteSearchLongitudinal.addEventListener('input', handleAthleteSearchLongitudinal);
             athleteSelectLongitudinal.addEventListener('change', handleAthleteSelectChangeLongitudinal);
 
+            // --- Initial Load ---
             loadAllData();
 
+            /**
+             * Normalizes an athlete's name for consistent matching.
+             * Converts to uppercase, removes commas, splits, sorts, and rejoins.
+             * e.g., "Fox, Jessica" -> "FOXJESSICA"
+             * e.g., "Jessica Fox" -> "FOXJESSICA"
+             */
             function normalizeAthleteName(name) {
                 if (!name) return '';
                 const cleanedName = name.toUpperCase().replace(/,/g, '');
                 return cleanedName.split(' ').filter(Boolean).sort().join('');
             }
 
+            /**
+             * Fetches and processes the main CSV data file.
+             */
             async function loadAllData() {
                 try {
                     const response = await fetch(DATA_FILE_PATH);
@@ -184,6 +210,7 @@
                     const csvText = await response.text();
                     allData = manualCsvParse(csvText);
                     
+                    // Post-process data: add normalized names
                     allData.forEach(row => {
                         const originalName = row['Athlete Name'];
                         const normalized = normalizeAthleteName(originalName);
@@ -193,57 +220,97 @@
                         }
                     });
 
+                    // Calculate base scores after all data is parsed
                     baseScoreMap = calculateBaseScores(allData);
                     
+                    // Populate initial filters
                     populateYearFilter(allData);
                     populateClassFilterLongitudinal(allData);
 
+                    // Show main content
                     document.getElementById('loading-state').classList.add('hidden');
                     mainContentArea.classList.remove('hidden');
                     
                     showMessage('Data loaded successfully. Select filters to begin.', false);
                 } catch (error) {
+                    console.error("Data load error:", error);
                     document.getElementById('loading-state').innerHTML = `<p class="text-lg text-feedback-error">${error.message}</p>`;
                 }
             }
             
+            /**
+             * Handles switching between the "Annual" and "Longitudinal" tabs.
+             */
             function switchTab(tabName) {
                 const isActive = tabName === 'annual';
+                
+                // Toggle active styles for tabs
                 tabAnnual.classList.toggle('active', isActive);
                 tabLongitudinal.classList.toggle('active', !isActive);
                 
+                // Show/hide tab content
                 annualContent.classList.toggle('hidden', !isActive);
                 longitudinalContent.classList.toggle('hidden', isActive);
 
+                // Clear results
                 tablesWrapper.innerHTML = '';
                 chartContainer.classList.add('hidden');
                 if(mpsChart) mpsChart.destroy();
             }
 
+            /**
+             * Robust CSV parser that handles commas inside quoted fields.
+             * Replaces the simple `.split(',')` logic.
+             */
             function manualCsvParse(csvText) {
                 const lines = csvText.trim().split(/\r\n|\n/);
                 if (lines.length < 2) throw new Error("CSV file must have a header row and at least one data row.");
-                const headers = lines[0].split(',').map(h => h.trim()).filter(Boolean);
+                
+                // Trim whitespace AND quotes from headers, just in case
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '')).filter(Boolean);
                 const data = [];
+
+                // This regex splits on commas, but correctly ignores commas inside double quotes
+                const csvRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
                 for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
-                    const values = lines[i].split(',');
+                    if (!lines[i].trim()) continue; // Skip empty lines
+                    
+                    const values = lines[i].split(csvRegex);
+                    
+                    // Basic validation to skip malformed rows
+                    if (values.length !== headers.length) {
+                         console.warn(`Skipping malformed CSV line ${i+1}: Expected ${headers.length} fields, but found ${values.length}. Line: "${lines[i]}"`);
+                         continue; 
+                    }
+
                     const rowObject = {};
                     headers.forEach((header, index) => {
-                        rowObject[header] = values[index] ? values[index].trim() : '';
+                        if (values[index] !== undefined) {
+                            // Trim whitespace AND remove surrounding quotes from the data
+                            rowObject[header] = values[index].trim().replace(/^"|"$/g, '');
+                        } else {
+                            rowObject[header] = '';
+                        }
                     });
                     data.push(rowObject);
                 }
                 return data;
             }
 
+            /**
+             * Calculates the "Base Score" for each race (Competition + Phase + Year).
+             * The Base Score is the average of the 1st place times across all 4 target classes.
+             */
             function calculateBaseScores(data) {
                 const firstPlaceTimes = {};
+                // First pass: find all 1st place times for target classes/phases
                 for (const row of data) {
                     const rank = parseInt(row.Rank, 10);
                     if (rank === 1 && TARGET_PHASES.has(row.Phase) && TARGET_CLASSES.has(row.Class)) {
                         const totalTime = parseFloat(row['Total Time']);
                         if (!row.Year || !row.Competition || isNaN(totalTime)) continue;
+                        
                         const groupKey = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
                         if (!firstPlaceTimes[groupKey]) {
                             firstPlaceTimes[groupKey] = { classTimes: {} };
@@ -251,7 +318,9 @@
                         firstPlaceTimes[groupKey].classTimes[row.Class] = totalTime;
                     }
                 }
+                
                 const map = new Map();
+                // Second pass: calculate base score only for races where all 4 classes were present
                 for (const key in firstPlaceTimes) {
                     const group = firstPlaceTimes[key];
                     if (Object.keys(group.classTimes).length === TARGET_CLASSES.size) {
@@ -260,6 +329,8 @@
                         map.set(key, (sumOfTimes / TARGET_CLASSES.size).toFixed(2));
                     }
                 }
+                
+                // Third pass: copy Semi-Final/Final base scores to B-Finals if they exist
                 data.forEach(row => {
                     if (row.Phase === 'Semi-Final B' || row.Phase === 'Final B') {
                          const mainPhaseKey = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase.replace(' B', '')}`;
@@ -272,6 +343,8 @@
                 return map;
             }
 
+            // --- Annual Review Tab Functions ---
+
             function populateYearFilter(data) {
                 const years = [...new Set(data.map(row => row.Year))].sort((a, b) => b - a);
                 populateSelect(yearSelect, years, "Select a year...");
@@ -282,7 +355,8 @@
                 resetSelect(athleteSelectAnnual, "Select an athlete...");
                 athleteSearchAnnual.value = '';
                 athleteSearchAnnual.disabled = true;
-                tablesWrapper.innerHTML = '';
+                tablesWrapper.innerHTML = ''; // Clear results
+                
                 const selectedYear = yearSelect.value;
                 if (selectedYear && selectedYear !== "Select a year...") {
                     const classes = [...new Set(allData.filter(row => row.Year === selectedYear).map(row => row.Class))].sort();
@@ -294,12 +368,15 @@
             function handleClassChangeAnnual() {
                 resetSelect(athleteSelectAnnual, "Select an athlete...");
                 athleteSearchAnnual.value = '';
-                tablesWrapper.innerHTML = '';
+                tablesWrapper.innerHTML = ''; // Clear results
+                
                 const selectedYear = yearSelect.value;
                 const selectedClass = classSelectAnnual.value;
+                
                 if (selectedClass && selectedClass !== "Select a class...") {
                     const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Year === selectedYear && row.Class === selectedClass).map(row => row.normalizedName))];
                     const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName)).sort();
+                    
                     populateSelect(athleteSelectAnnual, athletes, "Select an athlete...");
                     athleteSelectAnnual.disabled = false;
                     athleteSearchAnnual.disabled = false;
@@ -312,8 +389,10 @@
                 const searchTerm = athleteSearchAnnual.value.toLowerCase();
                 const selectedYear = yearSelect.value;
                 const selectedClass = classSelectAnnual.value;
+                
                 const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Year === selectedYear && row.Class === selectedClass).map(row => row.normalizedName))];
                 const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName));
+                
                 const filteredAthletes = athletes.filter(name => name.toLowerCase().includes(searchTerm)).sort();
                 populateSelect(athleteSelectAnnual, filteredAthletes, "Select an athlete...");
             }
@@ -323,13 +402,21 @@
                 if (selectedAthlete && selectedAthlete !== "Select an athlete...") {
                     displayAthletePerformanceTable(yearSelect.value, classSelectAnnual.value, selectedAthlete);
                 } else {
-                    tablesWrapper.innerHTML = '';
+                    tablesWrapper.innerHTML = ''; // Clear results
                 }
             }
             
+            /**
+             * Generates and displays the performance table for the "Annual Review" tab.
+             */
             function displayAthletePerformanceTable(year, eventClass, athleteName) {
                 const normalizedNameToFind = normalizeAthleteName(athleteName);
-                const athleteData = allData.filter(row => row.Year === year && row.Class === eventClass && row.normalizedName === normalizedNameToFind);
+                const athleteData = allData.filter(row => 
+                    row.Year === year && 
+                    row.Class === eventClass && 
+                    row.normalizedName === normalizedNameToFind
+                );
+                
                 const perfRows = [];
                 const benchmark = BENCHMARKS[eventClass];
 
@@ -337,9 +424,12 @@
                     const key = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
                     const baseScore = baseScoreMap.get(key);
                     const athleteTime = parseFloat(row['Total Time']);
+                    
                     if (baseScore && !isNaN(athleteTime)) {
                         const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
+                        // Highlight performances better than the benchmark
                         const colorClass = performance < benchmark ? 'text-green-600 font-bold' : 'text-gray-900';
+                        
                         perfRows.push([
                             row.Competition,
                             row.Phase,
@@ -358,6 +448,8 @@
                 }
             }
 
+            // --- Longitudinal Review Tab Functions ---
+
             function populateClassFilterLongitudinal(data) {
                  const classes = [...new Set(data.map(row => row.Class))].sort();
                  populateSelect(classSelectLongitudinal, classes, "Select a class...");
@@ -366,12 +458,14 @@
             function handleClassChangeLongitudinal() {
                 resetSelect(athleteSelectLongitudinal, "Select an athlete...");
                 athleteSearchLongitudinal.value = '';
-                chartContainer.classList.add('hidden');
-                if(mpsChart) mpsChart.destroy();
+                chartContainer.classList.add('hidden'); // Hide chart
+                if(mpsChart) mpsChart.destroy(); // Destroy old chart
+                
                 const selectedClass = classSelectLongitudinal.value;
                 if(selectedClass && selectedClass !== "Select a class...") {
                     const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Class === selectedClass).map(row => row.normalizedName))];
                     const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName)).sort();
+                    
                     populateSelect(athleteSelectLongitudinal, athletes, "Select an athlete...");
                     athleteSelectLongitudinal.disabled = false;
                     athleteSearchLongitudinal.disabled = false;
@@ -383,8 +477,10 @@
             function handleAthleteSearchLongitudinal() {
                 const searchTerm = athleteSearchLongitudinal.value.toLowerCase();
                 const selectedClass = classSelectLongitudinal.value;
+                
                 const uniqueNormalizedNames = [...new Set(allData.filter(row => row.Class === selectedClass).map(row => row.normalizedName))];
                 const athletes = uniqueNormalizedNames.map(normName => athleteNameMap.get(normName));
+                
                 const filteredAthletes = athletes.filter(name => name.toLowerCase().includes(searchTerm)).sort();
                 populateSelect(athleteSelectLongitudinal, filteredAthletes, "Select an athlete...");
             }
@@ -394,21 +490,26 @@
                 if (selectedAthlete && selectedAthlete !== "Select an athlete...") {
                     displayLongitudinalChart(selectedAthlete, classSelectLongitudinal.value);
                 } else {
-                    chartContainer.classList.add('hidden');
-                    if(mpsChart) mpsChart.destroy();
+                    chartContainer.classList.add('hidden'); // Hide chart
+                    if(mpsChart) mpsChart.destroy(); // Destroy old chart
                 }
             }
-
+            
+            /**
+             * Calculates the upper (Q3) and lower (Q1) performance bands for a given class
+             * based on the WORLD_CHAMP_ATHLETES set.
+             */
             function calculatePerformanceBands(eventClass) {
                 const wcAthleteNames = WORLD_CHAMP_ATHLETES[eventClass] || new Set();
                 const normalizedWcNames = new Set([...wcAthleteNames].map(normalizeAthleteName));
                 
-                const bandPerformances = {};
+                const bandPerformances = {}; // Stores performances grouped by age
 
                 allData.forEach(row => {
+                    // Filter for WC athletes in the correct class
                     if (row.Class === eventClass && normalizedWcNames.has(row.normalizedName)) {
                         const penalty = parseInt(row['Total Penalties'], 10);
-                        if (penalty >= 50) return;
+                        if (penalty >= 50) return; // Exclude runs with major penalties (missed gate)
 
                         const yob = parseInt(row['Year of Birth'], 10);
                         const year = parseInt(row.Year, 10);
@@ -416,6 +517,7 @@
                         const baseScore = baseScoreMap.get(key);
                         const athleteTime = parseFloat(row['Total Time']);
 
+                        // Ensure all data points are valid
                         if (!isNaN(yob) && !isNaN(year) && baseScore && !isNaN(athleteTime)) {
                             const age = year - yob;
                             const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
@@ -427,10 +529,13 @@
                     }
                 });
 
-                const q1Data = [];
-                const q3Data = [];
+                const q1Data = []; // Lower Quartile
+                const q3Data = []; // Upper Quartile
+                
+                // Calculate quartiles for each age group
                 for (const age in bandPerformances) {
                     const performances = bandPerformances[age].sort((a, b) => a - b);
+                    // Only calculate if we have enough data points (at least 4)
                     if (performances.length >= 4) {
                         const q1Index = Math.floor(performances.length / 4);
                         const q3Index = Math.floor((3 * performances.length) / 4);
@@ -438,15 +543,25 @@
                         q3Data.push({ x: parseInt(age), y: performances[q3Index] });
                     }
                 }
+                
+                // Sort data by age (x-axis) for the chart
                 q1Data.sort((a, b) => a.x - b.x);
                 q3Data.sort((a, b) => a.x - b.x);
 
                 return { q1Data, q3Data };
             }
             
+            /**
+             * Generates and displays the longitudinal performance chart.
+             */
             function displayLongitudinalChart(athleteName, eventClass) {
                 const normalizedNameToFind = normalizeAthleteName(athleteName);
-                const athleteData = allData.filter(row => row.normalizedName === normalizedNameToFind && row.Class === eventClass);
+                const athleteData = allData.filter(row => 
+                    row.normalizedName === normalizedNameToFind && 
+                    row.Class === eventClass
+                );
+                
+                tablesWrapper.innerHTML = ''; // Clear any old tables/messages
                 
                 if (athleteData.length === 0) {
                     tablesWrapper.innerHTML = `<div class="text-center text-red-600 p-6 bg-red-50 rounded-lg border border-red-200"><h3 class="font-semibold">An Error Occurred</h3><p class="mt-2 text-sm">No race data found for ${athleteName} in the selected class.</p></div>`;
@@ -456,14 +571,18 @@
                 const chartData = [];
                 let hasYobData = false;
                 
+                // Process data for the selected athlete
                 athleteData.forEach(row => {
                     const yob = parseInt(row['Year of Birth'], 10);
                     const year = parseInt(row.Year, 10);
-                    if (!isNaN(yob)) hasYobData = true;
+                    
+                    if (!isNaN(yob) && yob > 0) hasYobData = true; // Check if 'Year of Birth' is valid
+                    
                     const key = `${row.Year}${KEY_DELIMITER}${row.Competition}${KEY_DELIMITER}${row.Phase}`;
                     const baseScore = baseScoreMap.get(key);
                     const athleteTime = parseFloat(row['Total Time']);
-                    if (!isNaN(yob) && !isNaN(year) && baseScore && !isNaN(athleteTime)) {
+                    
+                    if (!isNaN(yob) && yob > 0 && !isNaN(year) && baseScore && !isNaN(athleteTime)) {
                         const age = year - yob;
                         const performance = parseFloat(((athleteTime / baseScore) * 100).toFixed(2));
                         chartData.push({
@@ -475,12 +594,15 @@
                     }
                 });
 
+                // Only display chart if we have valid data points
                 if (chartData.length > 0) {
                     chartContainer.classList.remove('hidden');
-                    if (mpsChart) mpsChart.destroy();
+                    if (mpsChart) mpsChart.destroy(); // Clear previous chart instance
 
+                    // Calculate performance bands for the class
                     const { q1Data, q3Data } = calculatePerformanceBands(eventClass);
 
+                    // Calculate athlete's average trend line
                     const averageData = [];
                     const groupedByAge = chartData.reduce((acc, point) => {
                         acc[point.x] = acc[point.x] || [];
@@ -494,6 +616,7 @@
                     }
                     averageData.sort((a,b) => a.x - b.x);
                     
+                    // Create the chart
                     const ctx = document.getElementById('mps-chart').getContext('2d');
                     mpsChart = new Chart(ctx, {
                         data: {
@@ -502,16 +625,16 @@
                                 label: 'Upper Quartile',
                                 data: q3Data,
                                 borderColor: 'rgba(20, 184, 166, 0.5)',
-                                backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                                backgroundColor: 'rgba(20, 184, 166, 0.2)', // Fill color
                                 borderWidth: 1,
                                 pointRadius: 0,
-                                fill: '+1'
+                                fill: '+1' // Fill to the next dataset (q1Data)
                             },{
                                 type: 'line',
                                 label: 'Lower Quartile',
                                 data: q1Data,
                                 borderColor: 'rgba(20, 184, 166, 0.5)',
-                                backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                                backgroundColor: 'rgba(20, 184, 166, 0.2)', // Fill color
                                 borderWidth: 1,
                                 pointRadius: 0
                             },{
@@ -522,7 +645,7 @@
                                 borderColor: 'rgba(37, 99, 235, 1)',
                                 pointRadius: 5,
                                 pointHoverRadius: 7,
-                                order: 1
+                                order: 1 // Ensure scatter points are drawn on top
                             }, {
                                 type: 'line',
                                 label: 'Average Trend',
@@ -530,9 +653,9 @@
                                 borderColor: 'rgba(220, 38, 38, 1)',
                                 backgroundColor: 'rgba(220, 38, 38, 0.5)',
                                 borderWidth: 2,
-                                tension: 0.1,
+                                tension: 0.1, // Smooth the line slightly
                                 pointRadius: 0,
-                                order: 0
+                                order: 0 // Draw trend line on top of bands
                             }]
                         },
                         options: {
@@ -556,6 +679,7 @@
                                 legend: { 
                                     position: 'top',
                                     labels: {
+                                        // Hide the quartile labels from the legend
                                         filter: function(item) {
                                             return !item.text.includes('Quartile');
                                         }
@@ -565,6 +689,7 @@
                                 tooltip: { 
                                     callbacks: { 
                                         label: function(context) {
+                                            // Custom tooltip for scatter points
                                             if (context.dataset.label.includes('Quartile')) return null;
                                             const point = context.raw;
                                             return [
@@ -580,6 +705,7 @@
                         }
                     });
                 } else {
+                    // Handle cases where data exists but chart can't be drawn
                     if (!hasYobData) {
                         tablesWrapper.innerHTML = `<div class="text-center text-red-600 p-6 bg-red-50 rounded-lg border border-red-200"><h3 class="font-semibold">An Error Occurred</h3><p class="mt-2 text-sm">No longitudinal data found for ${athleteName}. Check if 'Year of Birth' is available for this athlete in the data file.</p></div>`;
                     } else {
@@ -588,6 +714,11 @@
                 }
             }
 
+            // --- Utility Functions ---
+
+            /**
+             * Populates a <select> element with options.
+             */
             function populateSelect(selectElement, options, defaultText) {
                 selectElement.innerHTML = `<option value="">${defaultText}</option>`;
                 options.forEach(option => {
@@ -598,17 +729,25 @@
                 });
             }
 
+            /**
+             * Resets a <select> element to its default, disabled state.
+             */
             function resetSelect(selectElement, defaultText) {
                 selectElement.innerHTML = `<option>${defaultText}</option>`;
                 selectElement.disabled = true;
             }
 
+            /**
+             * Creates and displays a data table in the results wrapper.
+             */
             function displayTable(title, headers, rows) {
-                tablesWrapper.innerHTML = '';
+                tablesWrapper.innerHTML = ''; // Clear previous table
                 const container = document.createElement('div');
                 container.className = 'bg-white rounded-xl shadow-md overflow-hidden';
+                
                 let headerHtml = headers.map(h => `<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('');
                 let rowsHtml = rows.map(row => `<tr class="hover:bg-gray-50">${row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${cell}</td>`).join('')}</tr>`).join('');
+                
                 container.innerHTML = `
                     <h2 class="text-2xl font-bold text-center p-6 text-brand-dark-blue">${title}</h2>
                     <div class="overflow-x-auto">
@@ -620,15 +759,21 @@
                 tablesWrapper.appendChild(container);
             }
 
+            /**
+             * Shows a temporary notification message at the top right.
+             */
             function showMessage(message, isError = true) {
                 const box = document.getElementById('message-box');
                 box.textContent = message;
+                // Reset classes
                 box.className = 'fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 z-50';
                 box.classList.add(isError ? 'bg-feedback-error' : 'bg-feedback-success');
                 box.classList.remove('hidden', 'opacity-0');
+                
+                // Fade out after 3 seconds
                 setTimeout(() => {
                     box.classList.add('opacity-0');
-                    setTimeout(() => box.classList.add('hidden'), 300);
+                    setTimeout(() => box.classList.add('hidden'), 300); // Hide after fade out
                 }, 3000);
             }
         };
